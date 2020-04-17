@@ -8,7 +8,7 @@ from . import dec
 from . import rand
 from . import mod
 from . import proc
-from . import test
+#from . import test
 from . import neighbour as nb
 #import mask
 from . import str_ as str

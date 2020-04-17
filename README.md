@@ -1,15 +1,43 @@
-# Shape Robust Text Detection with Progressive Scale Expansion Network
+# PSENet 文字检测
 
-## Requirements
-* Python 2.7
-* PyTorch v0.4.1+
-* pyclipper
-* Polygon2
-* OpenCV 3.4 (for c++ version pse)
-* opencv-python 3.4
+原作基于python2.7/PyTorch v0.4，这里将它升级到python3 / PyTorch 1.0+
 
-## Introduction
-Progressive Scale Expansion Network (PSENet) is a text detector which is able to well detect the arbitrary-shape text in natural scene.
+**注意，原作提供的模型都是PyTorch v0.4的，在高版本上不能加载，需要重新训练。**
+
+# 配置
+
+## 1.代码转 python3
+
+全部转换到源文件
+
+```
+2to3 -n -W .
+```
+
+## 2.依赖库
+
+```
+# Polygon
+pip install Polygon3
+pip install pyclipper
+```
+
+# 理解
+
+## 输出尺度
+
+文中提到了 PSENet-1s/4s 两种输出分辨率的模型，但实际代码中，体现分辨率的仅仅在模型最后输出的upscale处， 模型本身的计算没有差别。
+
+不同输出分辨率仅对后面的PSE计算有差别。
+
+```
+# x input image
+# out -- Si
+# upscale out to 1/scale of x
+out = self._upsample(out, x, scale=self.scale)
+```
+
+# Hacking
 
 ## Training
 ```
@@ -27,7 +55,7 @@ CUDA_VISIBLE_DEVICES=0 python test_ic15.py --scale 1 --resume [path of model]
 ### CTW1500
 
 ~~~~
-CUDA_VISIBLE_DEVICES=0 python test_ctw1500.py --scale 1 --kernel_num 7 --ctw_root /home/ysten/data/OCR/SCUT-CTW1500 --resume [path of model]
+CUDA_VISIBLE_DEVICES=0 python test_ctw1500.py --scale 1 --kernel_num 7 --ctw_root [path of CTW1500 data] --resume [path of model]
 ~~~~
 
 
@@ -40,109 +68,3 @@ sh eval_ic15.sh
 sh eval_ctw1500.sh
 ```
 
-# 配置
-
-## 1.代码转 python3
-
-全部转换到源文件
-
-~~~
-2to3 -n -W .
-~~~
-
-## 2.依赖库
-
-~~~
-# Polygon
-pip install Polygon3
-pip install pyclipper
-~~~
-
-# 理解
-
-## 输出尺度
-
-文中提到了 PSENet-1s/4s 两种输出分辨率的模型，但实际代码中，体现分辨率的仅仅在模型最后输出的upscale处， 模型本身的计算没有差别。
-
-只对后面的PSE计算有差别。
-
-~~~
-# x input image
-# out -- Si
-# upscale out to 1/scale of x
-out = self._upsample(out, x, scale=self.scale)
-~~~
-
-
-
-
-
-## Performance (new version paper)
-
-### [ICDAR 2015](http://rrc.cvc.uab.es/?ch=4&com=evaluation&task=1)
-| Method | Extra Data | Precision (%) | Recall (%) | F-measure (%) | FPS (1080Ti) | Model |
-| - | - | - | - | - | - | - |
-| PSENet-1s (ResNet50) | - | 81.49 | 79.68 | 80.57 | 1.6 | [baiduyun](https://pan.baidu.com/s/17FssfXd-hjsU5i2GGrKD-g)(extract code: rxti); [OneDrive](https://1drv.ms/u/s!Ai5Ldd26Lrzkkx3E1OTZzcNlMz5T) |
-| PSENet-1s (ResNet50) | pretrain on IC17 MLT | 86.92 | 84.5 | 85.69 | 1.6 | [baiduyun](https://pan.baidu.com/s/1oKVxHKuT3hdzDUmksbcgAQ)(extract code: aieo); [OneDrive](https://1drv.ms/u/s!Ai5Ldd26Lrzkkx44xvpay4rbV4nW) |
-| PSENet-4s (ResNet50) | pretrain on IC17 MLT | 86.1 | 83.77 | 84.92 | 3.8 | [baiduyun](https://pan.baidu.com/s/1oKVxHKuT3hdzDUmksbcgAQ)(extract code: aieo); [OneDrive](https://1drv.ms/u/s!Ai5Ldd26Lrzkkx44xvpay4rbV4nW) |
-
-### [SCUT-CTW1500](https://github.com/Yuliang-Liu/Curve-Text-Detector)
-| Method | Extra Data | Precision (%) | Recall (%) | F-measure (%) | FPS (1080Ti) | Model |
-| - | - | - | - | - | - | - |
-| PSENet-1s (ResNet50) | - | 80.57 | 75.55 | 78.0 | 3.9 | [baiduyun](https://pan.baidu.com/s/1BqJspFwBmHjoqlE0jOrJQg)(extract code: ksv7); [OneDrive](https://1drv.ms/u/s!Ai5Ldd26LrzkkxtlTb-yqBPd1PCn) |
-| PSENet-1s (ResNet50) | pretrain on IC17 MLT | 84.84| 79.73 | 82.2 | 3.9 | [baiduyun](https://pan.baidu.com/s/1zonNEABLk4ifseeJtQeS4w)(extract code: z7ac); [OneDrive](https://1drv.ms/u/s!Ai5Ldd26LrzkkxxJcfU1a__6nJTT) |
-| PSENet-4s (ResNet50) | pretrain on IC17 MLT | 82.09 | 77.84 | 79.9 | 8.4 | [baiduyun](https://pan.baidu.com/s/1zonNEABLk4ifseeJtQeS4w)(extract code: z7ac); [OneDrive](https://1drv.ms/u/s!Ai5Ldd26LrzkkxxJcfU1a__6nJTT) |
-
-## Performance (old version paper)
-### [ICDAR 2015](http://rrc.cvc.uab.es/?ch=4&com=evaluation&task=1) (training with ICDAR 2017 MLT)
-| Method | Precision (%) | Recall (%) | F-measure (%) |
-| - | - | - | - |
-| PSENet-4s (ResNet152) | 87.98 | 83.87 | 85.88 |
-| PSENet-2s (ResNet152) | 89.30 | 85.22 | 87.21 |
-| PSENet-1s (ResNet152) | 88.71 | 85.51 | 87.08 |
-
-### [ICDAR 2017 MLT](http://rrc.cvc.uab.es/?ch=8&com=evaluation&task=1)
-| Method | Precision (%) | Recall (%) | F-measure (%) |
-| - | - | - | - |
-| PSENet-4s (ResNet152) | 75.98 | 67.56 | 71.52 |
-| PSENet-2s (ResNet152) | 76.97 | 68.35 | 72.40 |
-| PSENet-1s (ResNet152) | 77.01 | 68.40 | 72.45 |
-
-### [SCUT-CTW1500](https://github.com/Yuliang-Liu/Curve-Text-Detector)
-| Method | Precision (%) | Recall (%) | F-measure (%) |
-| - | - | - | - |
-| PSENet-4s (ResNet152) | 80.49 | 78.13 | 79.29 |
-| PSENet-2s (ResNet152) | 81.95 | 79.30 | 80.60 |
-| PSENet-1s (ResNet152) | 82.50 | 79.89 | 81.17 |
-
-### [ICPR MTWI 2018 Challenge 2](https://tianchi.aliyun.com/competition/rankingList.htm?spm=5176.100067.5678.4.65166a80jnPm5W&raceId=231651)
-| Method | Precision (%) | Recall (%) | F-measure (%) |
-| - | - | - | - |
-| PSENet-1s (ResNet152) | 78.5 | 72.1 | 75.2 |
-
-## Results
-<div align="center">
-  <img src="https://github.com/whai362/PSENet/blob/master/figure/res0.png">
-</div>
-<p align="center">
-  Figure 3: The results on ICDAR 2015, ICDAR 2017 MLT and SCUT-CTW1500
-</p>
-
-## Paper Link
-[new version paper] [https://arxiv.org/abs/1903.12473](https://arxiv.org/abs/1903.12473)
-
-[old version paper] [https://arxiv.org/abs/1806.02559](https://arxiv.org/abs/1806.02559)
-
-## Other Implements
-[tensorflow version (thanks @[liuheng92](https://github.com/liuheng92))] [https://github.com/liuheng92/tensorflow_PSENet](https://github.com/liuheng92/tensorflow_PSENet)
-
-## Citation
-```
-@inproceedings{wang2019shape,
-  title={Shape Robust Text Detection With Progressive Scale Expansion Network},
-  author={Wang, Wenhai and Xie, Enze and Li, Xiang and Hou, Wenbo and Lu, Tong and Yu, Gang and Shao, Shuai},
-  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
-  pages={9336--9345},
-  year={2019}
-}
-```

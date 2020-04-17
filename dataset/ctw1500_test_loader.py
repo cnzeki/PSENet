@@ -10,8 +10,9 @@ import torchvision.transforms as transforms
 import torch
 import pyclipper
 import Polygon as plg
+import os
 
-ctw_root_dir = './data/CTW1500/'
+ctw_root_dir = './data/ctw1500/'
 ctw_test_data_dir = ctw_root_dir + 'test/text_image/'
 
 random.seed(123456)
@@ -33,9 +34,8 @@ def scale(img, long_size=1280):
 
 
 class CTW1500TestLoader(data.Dataset):
-    def __init__(self, long_size=1280):
-        
-        data_dirs = [ctw_test_data_dir]
+    def __init__(self, long_size=1280, ctw_root='.'):
+        data_dirs = [os.path.join(ctw_root, ctw_test_data_dir)]
         
         self.img_paths = []
         

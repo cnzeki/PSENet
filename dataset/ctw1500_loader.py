@@ -9,7 +9,7 @@ import torch
 import pyclipper
 import Polygon as plg
 
-ctw_root_dir = './data/CTW1500/'
+ctw_root_dir = './data/ctw1500/'
 ctw_train_data_dir = ctw_root_dir + 'train/text_image/'
 ctw_train_gt_dir = ctw_root_dir + 'train/text_label_curve/'
 ctw_test_data_dir = ctw_root_dir + 'test/text_image/'

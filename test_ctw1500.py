@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
+import Polygon as plg
 from torch.autograd import Variable
 from torch.utils import data
 
@@ -28,7 +28,7 @@ def extend_3c(img):
 def debug(idx, img_paths, imgs, output_root):
     if not os.path.exists(output_root):
         os.makedirs(output_root)
-    
+
     col = []
     for i in range(len(imgs)):
         row = []
@@ -75,7 +75,7 @@ def polygon_from_points(points):
     return plg.Polygon(pointMat)
 
 def test(args):
-    data_loader = CTW1500TestLoader(long_size=args.long_size)
+    data_loader = CTW1500TestLoader(long_size=args.long_size, ctw_root=args.ctw_root)
     test_loader = torch.utils.data.DataLoader(
         data_loader,
         batch_size=1,
@@ -90,17 +90,17 @@ def test(args):
         model = models.resnet101(pretrained=True, num_classes=7, scale=args.scale)
     elif args.arch == "resnet152":
         model = models.resnet152(pretrained=True, num_classes=7, scale=args.scale)
-    
+
     for param in model.parameters():
         param.requires_grad = False
 
     model = model.cuda()
-    
-    if args.resume is not None:                                         
+
+    if args.resume is not None:
         if os.path.isfile(args.resume):
             print(("Loading model and optimizer from checkpoint '{}'".format(args.resume)))
             checkpoint = torch.load(args.resume)
-            
+
             # model.load_state_dict(checkpoint['state_dict'])
             d = collections.OrderedDict()
             for key, value in list(checkpoint['state_dict'].items()):
@@ -116,7 +116,7 @@ def test(args):
             sys.stdout.flush()
 
     model.eval()
-    
+
     total_frame = 0.0
     total_time = 0.0
     for idx, (org_img, img) in enumerate(test_loader):
@@ -133,6 +133,7 @@ def test(args):
         outputs = model(img)
 
         score = torch.sigmoid(outputs[:, 0, :, :])
+        # to binary
         outputs = (torch.sign(outputs - args.binary_th) + 1) / 2
 
         text = outputs[:, 0, :, :]
@@ -141,12 +142,12 @@ def test(args):
         score = score.data.cpu().numpy()[0].astype(np.float32)
         text = text.data.cpu().numpy()[0].astype(np.uint8)
         kernels = kernels.data.cpu().numpy()[0].astype(np.uint8)
-        
+
         # c++ version pse
         pred = pse(kernels, args.min_kernel_area / (args.scale * args.scale))
         # python version pse
         # pred = pypse(kernels, args.min_kernel_area / (args.scale * args.scale))
-        
+
         # scale = (org_img.shape[0] * 1.0 / pred.shape[0], org_img.shape[1] * 1.0 / pred.shape[1])
         scale = (org_img.shape[1] * 1.0 / pred.shape[1], org_img.shape[0] * 1.0 / pred.shape[0])
         label = pred
@@ -174,7 +175,7 @@ def test(args):
 
             if bbox.shape[0] <= 2:
                 continue
-            
+
             bbox = bbox * scale
             bbox = bbox.astype('int32')
             bboxes.append(bbox.reshape(-1))
@@ -191,14 +192,14 @@ def test(args):
 
         image_name = data_loader.img_paths[idx].split('/')[-1].split('.')[0]
         write_result_as_txt(image_name, bboxes, 'outputs/submit_ctw1500/')
-        
+
         text_box = cv2.resize(text_box, (text.shape[1], text.shape[0]))
         debug(idx, data_loader.img_paths, [[text_box]], 'outputs/vis_ctw1500/')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hyperparams')
     parser.add_argument('--arch', nargs='?', type=str, default='resnet50')
-    parser.add_argument('--resume', nargs='?', type=str, default=None,    
+    parser.add_argument('--resume', nargs='?', type=str, default=None,
                         help='Path to previous saved model to restart from')
     parser.add_argument('--binary_th', nargs='?', type=float, default=1.0,
                         help='Path to previous saved model to restart from')
@@ -214,6 +215,8 @@ if __name__ == '__main__':
                         help='min area')
     parser.add_argument('--min_score', nargs='?', type=float, default=0.93,
                         help='min score')
+    parser.add_argument('--ctw_root', type=str, default='.',
+                        help='ctw1500 data root dir')
     
     args = parser.parse_args()
     test(args)
