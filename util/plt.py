@@ -35,7 +35,7 @@ def plot_solver_data(solver_path):
     plt.figure(solver_path)
     
     n = len(training_losses)
-    x = range(n)
+    x = list(range(n))
     
     plt.plot(x, training_losses, 'r-', label = 'Training Loss')
     
@@ -44,7 +44,7 @@ def plot_solver_data(solver_path):
     
     if len(val_losses) > 0:
         n = len(val_losses)
-        x = range(n)
+        x = list(range(n))
         plt.plot(x, val_losses, 'g-', label = 'Validation Loss')
         
         if len(val_accuracies) > 0:

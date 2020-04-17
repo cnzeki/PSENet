@@ -13,7 +13,7 @@ def get_pred(path):
             continue
         bbox = line.split(',')
         if len(bbox) % 2 == 1:
-            print path
+            print(path)
         bbox = [(int)(x) for x in bbox]
         bboxes.append(bbox)
     return bboxes
@@ -53,13 +53,14 @@ if __name__ == '__main__':
     pred_list = file_util.read_dir(pred_root)
 
     tp, fp, npos = 0, 0, 0
-    
+    # loop all images
     for pred_path in pred_list:
+        # load prediction & gt
         preds = get_pred(pred_path)
         gt_path = gt_root + pred_path.split('/')[-1]
         gts = get_gt(gt_path)
         npos += len(gts)
-        
+        # match predictions for the image
         cover = set()
         for pred_id, pred in enumerate(preds):
             pred = np.array(pred)
@@ -76,7 +77,7 @@ if __name__ == '__main__':
 
                 union = get_union(pred_p, gt_p)
                 inter = get_intersection(pred_p, gt_p)
-
+                #  IoU(pred, gt) > th => accept
                 if inter * 1.0 / union >= th:
                     if gt_id not in cover:
                         flag = True
@@ -86,9 +87,10 @@ if __name__ == '__main__':
             else:
                 fp += 1.0
 
-    print tp, fp, npos
+    # ok, finish the job
+    print(tp, fp, npos)
     precision = tp / (tp + fp)
     recall = tp / npos
     hmean = 0 if (precision + recall) == 0 else 2.0 * precision * recall / (precision + recall)
 
-    print 'p: %.4f, r: %.4f, f: %.4f'%(precision, recall, hmean)
+    print('p: %.4f, r: %.4f, f: %.4f'%(precision, recall, hmean))

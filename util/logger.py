@@ -1,6 +1,6 @@
 # A simple torch style logger
 # (C) Wei YANG 2017
-from __future__ import absolute_import
+
 # import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('pdf')
@@ -71,7 +71,7 @@ class Logger(object):
         self.file.flush()
 
     def plot(self, names=None):   
-        print 'plot'
+        print('plot')
         '''
         names = self.names if names == None else names
         numbers = self.numbers
@@ -91,7 +91,7 @@ class LoggerMonitor(object):
     def __init__ (self, paths):
         '''paths is a distionary with {name:filepath} pair'''
         self.loggers = []
-        for title, path in paths.items():
+        for title, path in list(paths.items()):
             logger = Logger(path, title=title, resume=True)
             self.loggers.append(logger)
 

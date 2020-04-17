@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import Queue
+import queue
 
 def pse(kernals, min_area):
     kernal_num = len(kernals)
@@ -12,8 +12,8 @@ def pse(kernals, min_area):
         if np.sum(label == label_idx) < min_area:
             label[label == label_idx] = 0
 
-    queue = Queue.Queue(maxsize = 0)
-    next_queue = Queue.Queue(maxsize = 0)
+    queue = queue.Queue(maxsize = 0)
+    next_queue = queue.Queue(maxsize = 0)
     points = np.array(np.where(label > 0)).transpose((1, 0))
     
     for point_idx in range(points.shape[0]):

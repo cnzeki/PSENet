@@ -188,9 +188,9 @@ def main(args):
         else:
             args.checkpoint += "_pretrain_ic17"
 
-    print ('checkpoint path: %s'%args.checkpoint)
-    print ('init lr: %.8f'%args.lr)
-    print ('schedule: ', args.schedule)
+    print(('checkpoint path: %s'%args.checkpoint))
+    print(('init lr: %.8f'%args.lr))
+    print(('schedule: ', args.schedule))
     sys.stdout.flush()
 
     if not os.path.isdir(args.checkpoint):
@@ -246,7 +246,7 @@ def main(args):
 
     for epoch in range(start_epoch, args.n_epoch):
         adjust_learning_rate(args, optimizer, epoch)
-        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.n_epoch, optimizer.param_groups[0]['lr']))
+        print(('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.n_epoch, optimizer.param_groups[0]['lr'])))
 
         train_loss, train_te_acc, train_ke_acc, train_te_iou, train_ke_iou = train(train_loader, model, dice_loss, optimizer, epoch)
         save_checkpoint({

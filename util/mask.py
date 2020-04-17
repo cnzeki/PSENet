@@ -41,8 +41,8 @@ def find_black_components(mask, min_area = 0):
         
     rows, cols = np.shape(mask)
     q = []
-    for y in xrange(rows):
-        for x in xrange(cols):
+    for y in range(rows):
+        for x in range(cols):
             xy = (x, y)
             if  is_visited(xy):
                 continue
@@ -60,8 +60,8 @@ def find_black_components(mask, min_area = 0):
                         q.insert(0, nb)
     
     components = {}
-    for y in xrange(rows):
-        for x in xrange(cols):
+    for y in range(rows):
+        for x in range(cols):
             root = get_root((x, y))
             if root == 0:
                 continue

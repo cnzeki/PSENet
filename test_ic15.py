@@ -39,7 +39,7 @@ def debug(idx, img_paths, imgs, output_root):
         col.append(res)
     res = np.concatenate(col, axis=0)
     img_name = img_paths[idx].split('/')[-1]
-    print idx, '/', len(img_paths), img_name
+    print(idx, '/', len(img_paths), img_name)
     cv2.imwrite(output_root + img_name, res)
 
 def write_result_as_txt(image_name, bboxes, path):
@@ -91,21 +91,21 @@ def test(args):
     
     if args.resume is not None:                                         
         if os.path.isfile(args.resume):
-            print("Loading model and optimizer from checkpoint '{}'".format(args.resume))
+            print(("Loading model and optimizer from checkpoint '{}'".format(args.resume)))
             checkpoint = torch.load(args.resume)
             
             # model.load_state_dict(checkpoint['state_dict'])
             d = collections.OrderedDict()
-            for key, value in checkpoint['state_dict'].items():
+            for key, value in list(checkpoint['state_dict'].items()):
                 tmp = key[7:]
                 d[tmp] = value
             model.load_state_dict(d)
 
-            print("Loaded checkpoint '{}' (epoch {})"
-                  .format(args.resume, checkpoint['epoch']))
+            print(("Loaded checkpoint '{}' (epoch {})"
+                  .format(args.resume, checkpoint['epoch'])))
             sys.stdout.flush()
         else:
-            print("No checkpoint found at '{}'".format(args.resume))
+            print(("No checkpoint found at '{}'".format(args.resume)))
             sys.stdout.flush()
 
     model.eval()
@@ -113,7 +113,7 @@ def test(args):
     total_frame = 0.0
     total_time = 0.0
     for idx, (org_img, img) in enumerate(test_loader):
-        print('progress: %d / %d'%(idx, len(test_loader)))
+        print(('progress: %d / %d'%(idx, len(test_loader))))
         sys.stdout.flush()
 
         img = Variable(img.cuda(), volatile=True)
@@ -164,7 +164,7 @@ def test(args):
         end = time.time()
         total_frame += 1
         total_time += (end - start)
-        print('fps: %.2f'%(total_frame / total_time))
+        print(('fps: %.2f'%(total_frame / total_time)))
         sys.stdout.flush()
 
         for bbox in bboxes:

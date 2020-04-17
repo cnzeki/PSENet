@@ -1,6 +1,6 @@
 #encoding = utf-8
 
 def cmd(cmd):
-    import  commands
-    return commands.getoutput(cmd)
+    import  subprocess
+    return subprocess.getoutput(cmd)
 

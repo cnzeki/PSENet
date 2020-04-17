@@ -110,7 +110,7 @@ def clone(obj, deep = False):
 
 def empty_list(length, etype):
     empty_list = [None] * length
-    for i in xrange(length):
+    for i in range(length):
         if etype == list:
             empty_list[i] = []
         else:

@@ -13,7 +13,7 @@ class runningScore(object):
         mask = (label_true >= 0) & (label_true < n_class)
 
         if np.sum((label_pred[mask] < 0)) > 0:
-            print (label_pred[label_pred < 0])
+            print((label_pred[label_pred < 0]))
         hist = np.bincount(
             n_class * label_true[mask].astype(int) +
             label_pred[mask], minlength=n_class**2).reshape(n_class, n_class)
@@ -39,7 +39,7 @@ class runningScore(object):
         mean_iu = np.nanmean(iu)
         freq = hist.sum(axis=1) / (hist.sum() + 0.0001)
         fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
-        cls_iu = dict(zip(range(self.n_classes), iu))
+        cls_iu = dict(list(zip(list(range(self.n_classes)), iu)))
 
         return {'Overall Acc': acc,
                 'Mean Acc': acc_cls,

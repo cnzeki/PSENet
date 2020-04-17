@@ -21,15 +21,40 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_ic15.py
 CUDA_VISIBLE_DEVICES=0 python test_ic15.py --scale 1 --resume [path of model]
 ```
 
+
+
 ## Eval script for ICDAR 2015 and SCUT-CTW1500
+
 ```
 cd eval
 sh eval_ic15.sh
 sh eval_ctw1500.sh
 ```
 
+# 配置
+
+## 1.代码转 python3
+
+全部转换到源文件
+
+~~~
+2to3 -n -W .
+~~~
+
+## 2.依赖库
+
+~~~
+# Polygon
+pip install Polygon3
+pip install pyclipper
+~~~
+
+
+
+
 
 ## Performance (new version paper)
+
 ### [ICDAR 2015](http://rrc.cvc.uab.es/?ch=4&com=evaluation&task=1)
 | Method | Extra Data | Precision (%) | Recall (%) | F-measure (%) | FPS (1080Ti) | Model |
 | - | - | - | - | - | - | - |
@@ -46,28 +71,28 @@ sh eval_ctw1500.sh
 
 ## Performance (old version paper)
 ### [ICDAR 2015](http://rrc.cvc.uab.es/?ch=4&com=evaluation&task=1) (training with ICDAR 2017 MLT)
-| Method | Precision (%) | Recall (%) | F-measure (%) | 
+| Method | Precision (%) | Recall (%) | F-measure (%) |
 | - | - | - | - |
 | PSENet-4s (ResNet152) | 87.98 | 83.87 | 85.88 |
 | PSENet-2s (ResNet152) | 89.30 | 85.22 | 87.21 |
 | PSENet-1s (ResNet152) | 88.71 | 85.51 | 87.08 |
 
 ### [ICDAR 2017 MLT](http://rrc.cvc.uab.es/?ch=8&com=evaluation&task=1)
-| Method | Precision (%) | Recall (%) | F-measure (%) | 
+| Method | Precision (%) | Recall (%) | F-measure (%) |
 | - | - | - | - |
 | PSENet-4s (ResNet152) | 75.98 | 67.56 | 71.52 |
 | PSENet-2s (ResNet152) | 76.97 | 68.35 | 72.40 |
 | PSENet-1s (ResNet152) | 77.01 | 68.40 | 72.45 |
 
 ### [SCUT-CTW1500](https://github.com/Yuliang-Liu/Curve-Text-Detector)
-| Method | Precision (%) | Recall (%) | F-measure (%) | 
+| Method | Precision (%) | Recall (%) | F-measure (%) |
 | - | - | - | - |
 | PSENet-4s (ResNet152) | 80.49 | 78.13 | 79.29 |
 | PSENet-2s (ResNet152) | 81.95 | 79.30 | 80.60 |
 | PSENet-1s (ResNet152) | 82.50 | 79.89 | 81.17 |
 
 ### [ICPR MTWI 2018 Challenge 2](https://tianchi.aliyun.com/competition/rankingList.htm?spm=5176.100067.5678.4.65166a80jnPm5W&raceId=231651)
-| Method | Precision (%) | Recall (%) | F-measure (%) | 
+| Method | Precision (%) | Recall (%) | F-measure (%) |
 | - | - | - | - |
 | PSENet-1s (ResNet152) | 78.5 | 72.1 | 75.2 |
 

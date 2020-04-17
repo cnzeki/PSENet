@@ -268,8 +268,8 @@ def resnet50(pretrained=False, **kwargs):
     if pretrained:
         pretrained_model = model_zoo.load_url(model_urls['resnet50'])
         state = model.state_dict()
-        for key in state.keys():
-            if key in pretrained_model.keys():
+        for key in list(state.keys()):
+            if key in list(pretrained_model.keys()):
                 state[key] = pretrained_model[key]
         model.load_state_dict(state)
     return model
@@ -285,8 +285,8 @@ def resnet101(pretrained=False, **kwargs):
     if pretrained:
         pretrained_model = model_zoo.load_url(model_urls['resnet101'])
         state = model.state_dict()
-        for key in state.keys():
-            if key in pretrained_model.keys():
+        for key in list(state.keys()):
+            if key in list(pretrained_model.keys()):
                 state[key] = pretrained_model[key]
         model.load_state_dict(state)
     return model
@@ -301,8 +301,8 @@ def resnet152(pretrained=False, **kwargs):
     if pretrained:
         pretrained_model = model_zoo.load_url(model_urls['resnet152'])
         state = model.state_dict()
-        for key in state.keys():
-            if key in pretrained_model.keys():
+        for key in list(state.keys()):
+            if key in list(pretrained_model.keys()):
                 state[key] = pretrained_model[key]
         model.load_state_dict(state)
     return model

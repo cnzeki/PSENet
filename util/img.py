@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import logging
 import math
-import event
+from . import event
 import util
 
 IMREAD_GRAY = 0
@@ -508,8 +508,8 @@ def min_area_rect(xs, ys):
         
     num_rects = xs.shape[0]
     box = np.empty((num_rects, 5))#cx, cy, w, h, theta
-    for idx in xrange(num_rects):
-        points = zip(xs[idx, :], ys[idx, :])
+    for idx in range(num_rects):
+        points = list(zip(xs[idx, :], ys[idx, :]))
         cnt = points_to_contour(points)
         rect = cv2.minAreaRect(cnt)
         cx, cy = rect[0]
