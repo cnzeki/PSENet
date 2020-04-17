@@ -17,9 +17,18 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_ic15.py
 ```
 
 ## Testing
+
+### ICDAR 2015
+
 ```
 CUDA_VISIBLE_DEVICES=0 python test_ic15.py --scale 1 --resume [path of model]
 ```
+
+### CTW1500
+
+~~~~
+CUDA_VISIBLE_DEVICES=0 python test_ctw1500.py --scale 1 --kernel_num 7 --ctw_root /home/ysten/data/OCR/SCUT-CTW1500 --resume [path of model]
+~~~~
 
 
 
@@ -47,6 +56,21 @@ sh eval_ctw1500.sh
 # Polygon
 pip install Polygon3
 pip install pyclipper
+~~~
+
+# 理解
+
+## 输出尺度
+
+文中提到了 PSENet-1s/4s 两种输出分辨率的模型，但实际代码中，体现分辨率的仅仅在模型最后输出的upscale处， 模型本身的计算没有差别。
+
+只对后面的PSE计算有差别。
+
+~~~
+# x input image
+# out -- Si
+# upscale out to 1/scale of x
+out = self._upsample(out, x, scale=self.scale)
 ~~~
 
 

@@ -224,11 +224,11 @@ class ResNet(nn.Module):
         p3 = self._upsample(p3, p2)
         p4 = self._upsample(p4, p2)
         p5 = self._upsample(p5, p2)
-
-        out = torch.cat((p2, p3, p4, p5), 1)
-        out = self.conv2(out)
+        # C
+        out = torch.cat((p2, p3, p4, p5), 1)  # => F 1024C
+        out = self.conv2(out)                 # => 256C
         out = self.relu2(self.bn2(out))
-        out = self.conv3(out)
+        out = self.conv3(out)                 # => kernels
         out = self._upsample(out, x, scale=self.scale)
 
         return out

@@ -2,39 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="272565c2-1454-4f04-8df7-c9144e179ced" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset/ctw1500_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset/ctw1500_loader.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dataset/ctw1500_test_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset/ctw1500_test_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset/icdar2015_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset/icdar2015_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset/icdar2015_test_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset/icdar2015_test_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eval/ctw1500/eval_ctw1500.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval/ctw1500/eval_ctw1500.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs_v1.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs_v1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eval/ic15/script.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval/ic15/script.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/metrics.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/fpn_resnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/fpn_resnet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pse/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/pse/__main__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pypse.py" beforeDir="false" afterPath="$PROJECT_DIR$/pypse.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test_ctw1500.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_ctw1500.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_ic15.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_ic15.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_ctw1500.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_ctw1500.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_ic15.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_ic15.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/caffe_.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/caffe_.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/cmd.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/cmd.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/img.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/img.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/io_.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/io_.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/log.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/log.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/logger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/mask.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/mask.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/np.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/np.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/plt.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/plt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/proc.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/proc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/tf.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/tf.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/thread_.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/thread_.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/url.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/url.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -43,35 +15,78 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/README.md">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="66">
-              <caret line="3" column="12" selection-start-line="3" selection-start-column="12" selection-end-line="3" selection-end-column="12" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/eval/eval_ic15.sh">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="22">
-              <caret line="1" column="59" selection-start-line="1" selection-start-column="59" selection-end-line="1" selection-end-column="59" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/eval/eval_ctw1500.sh">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/test_ctw1500.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="175">
+              <caret line="217" column="25" lean-forward="true" selection-start-line="217" selection-start-column="25" selection-end-line="217" selection-end-column="35" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/train_ctw1500.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="152">
+              <caret line="272" column="56" selection-start-line="272" selection-start-column="56" selection-end-line="272" selection-end-column="56" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dataset/ctw1500_loader.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="537">
+              <caret line="209" column="34" selection-start-line="209" selection-start-column="28" selection-end-line="209" selection-end-column="34" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/train_ic15.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="197">
+              <caret line="212" column="28" selection-start-line="212" selection-start-column="28" selection-end-line="212" selection-end-column="28" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/models/fpn_resnet.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="264">
+              <caret line="231" column="8" lean-forward="true" selection-start-line="231" selection-start-column="8" selection-end-line="231" selection-end-column="54" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dataset/ctw1500_test_loader.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="130">
+              <caret line="33" lean-forward="true" selection-start-line="33" selection-end-line="33" />
+              <folding>
+                <element signature="e#55#73#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/ctw1500/eval_ctw1500.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="402">
-              <caret line="89" column="24" selection-start-line="89" selection-start-column="24" selection-end-line="89" selection-end-column="24" />
+            <state relative-caret-position="-515">
+              <caret line="5" selection-start-line="5" selection-end-line="5" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
               </folding>
@@ -80,27 +95,23 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/eval/ic15/script.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="350">
-              <caret line="337" column="33" selection-start-line="337" selection-start-column="33" selection-end-line="337" selection-end-column="33" />
-              <folding>
-                <element signature="e#46#80#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-125">
+            <state relative-caret-position="7282">
               <caret line="332" column="4" selection-start-line="332" selection-start-column="4" selection-end-line="332" selection-end-column="4" />
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>long_size</find>
+      <find>min_scale</find>
+      <find>self.scale</find>
+      <find>scale</find>
+    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -109,6 +120,9 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/eval/ctw1500/eval_ctw1500.py" />
+        <option value="$PROJECT_DIR$/models/fpn_resnet.py" />
+        <option value="$PROJECT_DIR$/dataset/ctw1500_test_loader.py" />
+        <option value="$PROJECT_DIR$/test_ctw1500.py" />
       </list>
     </option>
   </component>
@@ -123,9 +137,9 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="24" />
-    <option name="y" value="45" />
+  <component name="ProjectFrameBounds">
+    <option name="x" value="54" />
+    <option name="y" value="51" />
     <option name="width" value="1890" />
     <option name="height" value="960" />
   </component>
@@ -141,23 +155,6 @@
               <item name="PSENet" type="b2602c69:ProjectViewProjectNode" />
               <item name="PSENet" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="PSENet" type="b2602c69:ProjectViewProjectNode" />
-              <item name="PSENet" type="462c0819:PsiDirectoryNode" />
-              <item name="eval" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="PSENet" type="b2602c69:ProjectViewProjectNode" />
-              <item name="PSENet" type="462c0819:PsiDirectoryNode" />
-              <item name="eval" type="462c0819:PsiDirectoryNode" />
-              <item name="ctw1500" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="PSENet" type="b2602c69:ProjectViewProjectNode" />
-              <item name="PSENet" type="462c0819:PsiDirectoryNode" />
-              <item name="eval" type="462c0819:PsiDirectoryNode" />
-              <item name="ic15" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -166,6 +163,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
@@ -195,17 +193,18 @@
       <option name="presentableId" value="Default" />
       <updated>1587092670092</updated>
       <workItem from="1587092678810" duration="4964000" />
+      <workItem from="1587107573498" duration="10641000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="4964000" />
+    <option name="totallyTimeSpent" value="15605000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="-7" width="1233" height="735" extended-state="6" />
+    <frame x="36" y="34" width="1260" height="640" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21470343" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15114379" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="File Transfer" order="0" weight="0.3285968" />
@@ -242,6 +241,9 @@
         <state relative-caret-position="-112" />
       </provider>
     </entry>
+    <entry file="file://D:/install/Anaconda3/Lib/site-packages/Polygon/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/eval/eval_ic15.sh">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="22">
@@ -252,23 +254,9 @@
     <entry file="file://$PROJECT_DIR$/eval/eval_ctw1500.sh">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-125">
-          <caret line="332" column="4" selection-start-line="332" selection-start-column="4" selection-end-line="332" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="66">
-          <caret line="3" column="12" selection-start-line="3" selection-start-column="12" selection-end-line="3" selection-end-column="12" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/eval/ic15/script.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="350">
+        <state relative-caret-position="7370">
           <caret line="337" column="33" selection-start-line="337" selection-start-column="33" selection-end-line="337" selection-end-column="33" />
           <folding>
             <element signature="e#46#80#0" expanded="true" />
@@ -276,15 +264,129 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://D:/install/Anaconda3/Lib/site-packages/Polygon/__init__.py">
+    <entry file="file://$PROJECT_DIR$/eval/ic15/rrc_evaluation_funcs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7282">
+          <caret line="332" column="4" selection-start-line="332" selection-start-column="4" selection-end-line="332" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pse/include/clipper/clipper.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1122" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pse/include/clipper/clipper.hpp">
       <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pse/adaptor_1.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-99" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pse/adaptor.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2178">
+          <caret line="7" lean-forward="true" selection-start-line="7" selection-end-line="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pse/Makefile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="66">
+          <caret line="3" column="53" lean-forward="true" selection-start-line="3" selection-start-column="53" selection-end-line="3" selection-end-column="53" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pse/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/util/io_.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="82" column="4" selection-start-line="82" selection-start-column="4" selection-end-line="82" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dataset/ctw1500_loader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="537">
+          <caret line="209" column="34" selection-start-line="209" selection-start-column="28" selection-end-line="209" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_ic15.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="197">
+          <caret line="212" column="28" selection-start-line="212" selection-start-column="28" selection-end-line="212" selection-end-column="28" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/fpn_resnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="264">
+          <caret line="231" column="8" lean-forward="true" selection-start-line="231" selection-start-column="8" selection-end-line="231" selection-end-column="54" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/figure/pse.png">
+      <provider selected="true" editor-type-id="images" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/figure/res0.png">
+      <provider selected="true" editor-type-id="images" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_ctw1500.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="152">
+          <caret line="272" column="56" selection-start-line="272" selection-start-column="56" selection-end-line="272" selection-end-column="56" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="88">
+          <caret line="43" column="8" lean-forward="true" selection-start-line="43" selection-start-column="8" selection-end-line="43" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dataset/ctw1500_test_loader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="130">
+          <caret line="33" lean-forward="true" selection-start-line="33" selection-end-line="33" />
+          <folding>
+            <element signature="e#55#73#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/ctw1500/eval_ctw1500.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="402">
-          <caret line="89" column="24" selection-start-line="89" selection-start-column="24" selection-end-line="89" selection-end-column="24" />
+        <state relative-caret-position="-515">
+          <caret line="5" selection-start-line="5" selection-end-line="5" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_ctw1500.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="217" column="25" lean-forward="true" selection-start-line="217" selection-start-column="25" selection-end-line="217" selection-end-column="35" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>
