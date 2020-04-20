@@ -268,7 +268,7 @@ if __name__ == '__main__':
                         help='# of the epochs')
     parser.add_argument('--schedule', type=int, nargs='+', default=[200, 400],
                         help='Decrease learning rate at these epochs.')
-    parser.add_argument('--batch_size', nargs='?', type=int, default=16, 
+    parser.add_argudment('--batch_size', nargs='?', type=int, default=16,
                         help='Batch Size')
     parser.add_argument('--lr', nargs='?', type=float, default=1e-3, 
                         help='Learning Rate')
