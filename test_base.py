@@ -31,7 +31,7 @@ def extend_3c(img):
     return img
 
 
-def debug(idx, img_paths, imgs, output_root):
+def debug(idx, img_name, imgs, output_root):
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
@@ -44,8 +44,6 @@ def debug(idx, img_paths, imgs, output_root):
         res = np.concatenate(row, axis=1)
         col.append(res)
     res = np.concatenate(col, axis=0)
-    img_name = img_paths[idx].split('/')[-1]
-    print(idx, '/', len(img_paths), img_name)
     cv2.imwrite(output_root + img_name, res)
 
 
@@ -194,8 +192,8 @@ def run_PSENet(args, model, img, org_shape, out_type='rect'):
     return bboxes
 
 
-def img_preprocess(img, precession=960, cuda=torch.cuda.is_available()):
-    org_img = img[:, :, [2, 1, 0]]
+def img_preprocess(org_img, precession=960, cuda=torch.cuda.is_available()):
+    # org_img = img[:, :, [2, 1, 0]]
     h, w = org_img.shape[0:2]
     scale = precession * 1.0 / max(h, w)
     scaled_img = cv2.resize(org_img, dsize=None, fx=scale, fy=scale)

@@ -30,8 +30,7 @@ class VideoDataset(data.Dataset):
 
     def __getitem__(self, index):
         _, img = self.cap.read()
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        return img
+        return str(index), cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
 
 class ImgListLoader(data.Dataset):
@@ -39,12 +38,12 @@ class ImgListLoader(data.Dataset):
         self.img_list = img_list
 
     def __len__(self):
-        return len(self.img_paths)
+        return len(self.img_list)
 
     def __getitem__(self, index):
         img = cv2.imread(self.img_list[index])
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        return img
+        image_name = self.img_list[index].split('/')[-1]
+        return image_name, cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
 
 def get_test_images(opt):
@@ -78,28 +77,33 @@ def get_test_dataset(opt):
 
 
 def test(args):
-    data_loader = CTW1500TestLoader(long_size=args.long_size, ctw_root=args.ctw_root)
+    data_loader = get_test_dataset(args)
     test_loader = torch.utils.data.DataLoader(
         data_loader,
         batch_size=1,
         shuffle=False,
-        num_workers=2,
-        drop_last=True)
-
+        num_workers=0,
+        drop_last=False)
+    # check title
+    if not args.title:
+        args.title = os.path.basename(args.demo).split('.')[0]
+    print('Run test %s' % args.title)
     model = load_model(args)
     total_frame = 0.0
     total_time = 0.0
-    for idx, (org_img, img) in enumerate(test_loader):
+    for idx, (image_name, org_img) in enumerate(test_loader):
         print(('progress: %d / %d' % (idx, len(test_loader))))
         sys.stdout.flush()
-
-        img = Variable(img.cuda(), volatile=True)
+        # read in RGB
         org_img = org_img.numpy().astype('uint8')[0]
+        img = img_preprocess(org_img, args.long_size)
+        # rgb -> bgr
+        org_img = org_img[:, :, [2, 1, 0]]
         text_box = org_img.copy()
 
         torch.cuda.synchronize()
         start = time.time()
-        bboxes = run_PSENet(args, model, img, org_img.shape, out_type='contour')
+        bboxes = run_PSENet(args, model, img, org_img.shape, out_type=args.out_type)
         torch.cuda.synchronize()
         end = time.time()
         total_frame += 1
@@ -111,15 +115,10 @@ def test(args):
             bbox = _bbox['bbox']
             cv2.drawContours(text_box, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, (0, 255, 0), 2)
 
-        image_name = data_loader.img_paths[idx].split('/')[-1].split('.')[0]
-        write_pts_as_txt(image_name, bboxes, 'outputs/submit_ctw1500/')
-
-        debug(idx, data_loader.img_paths, [[text_box]], 'outputs/vis_ctw1500/')
-
-    cmd = 'cd %s;zip -j %s %s/*' % ('./outputs/', 'submit_ctw1500.zip', 'submit_ctw1500');
-    print(cmd)
-    sys.stdout.flush()
-    util.cmd.cmd(cmd)
+        image_name = image_name[0]
+        if args.submit:
+            write_pts_as_txt(image_name.split('.')[0], bboxes, 'outputs/submit_%s/' % args.title)
+        debug(idx, image_name, [[text_box]], 'outputs/vis_%s/'% args.title)
 
 
 if __name__ == '__main__':
@@ -129,7 +128,7 @@ if __name__ == '__main__':
                         help='Path to previous saved model to restart from')
     parser.add_argument('--binary_th', nargs='?', type=float, default=1.0,
                         help='Path to previous saved model to restart from')
-    parser.add_argument('--kernel_num', nargs='?', type=int, default=3,
+    parser.add_argument('--kernel_num', nargs='?', type=int, default=7,
                         help='Path to previous saved model to restart from')
     parser.add_argument('--scale', nargs='?', type=int, default=1,
                         help='Path to previous saved model to restart from')
@@ -141,8 +140,16 @@ if __name__ == '__main__':
                         help='min area')
     parser.add_argument('--min_score', nargs='?', type=float, default=0.93,
                         help='min score')
-    parser.add_argument('--ctw_root', type=str, default='.',
-                        help='ctw1500 data root dir')
+    parser.add_argument('--demo', type=str, default='.',
+                        help='data to be tested can be list | dir | video')
+    parser.add_argument('--test_num', type=int, default=0,
+                        help='num of images to test')
+    parser.add_argument('--out_type', type=str, default='contour',
+                        help='rect | rbox | contour')
+    parser.add_argument('--title', type=str, default='',
+                        help='title for the test')
+    parser.add_argument('--submit', action='store_true',
+                             help='save submit output.')
 
     args = parser.parse_args()
     test(args)
