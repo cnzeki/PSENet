@@ -2,32 +2,13 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+import time
+
 from torch.utils import data
 
-# c++ version pse based on opencv 3+
-from  test_base import *
-from torch.utils import data
-
-# c++ version pse based on opencv 3+
-from test_base import *
 from dataset import CTW1500TestLoader
-
-
-def write_result_as_txt(image_name, bboxes, path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    filename = util.io.join_path(path, '%s.txt'%(image_name))
-    lines = []
-    for b_idx, bbox in enumerate(bboxes):
-        values = [int(v) for v in bbox]
-        # line = "%d, %d, %d, %d, %d, %d, %d, %d\n"%tuple(values)
-        line = "%d"%values[0]
-        for v_id in range(1, len(values)):
-            line += ", %d"%values[v_id]
-        line += '\n'
-        lines.append(line)
-    util.io.write_lines(filename, lines)
+from test_base import *
 
 
 def test(args):
@@ -43,7 +24,7 @@ def test(args):
     total_frame = 0.0
     total_time = 0.0
     for idx, (org_img, img) in enumerate(test_loader):
-        print(('progress: %d / %d'%(idx, len(test_loader))))
+        print(('progress: %d / %d' % (idx, len(test_loader))))
         sys.stdout.flush()
 
         img = Variable(img.cuda(), volatile=True)
@@ -57,18 +38,19 @@ def test(args):
         end = time.time()
         total_frame += 1
         total_time += (end - start)
-        print(('fps: %.2f'%(total_frame / total_time)))
+        print(('fps: %.2f' % (total_frame / total_time)))
         sys.stdout.flush()
 
-        for bbox in bboxes:
-            cv2.drawContours(text_box, [bbox.reshape(bbox.shape[0] / 2, 2)], -1, (0, 255, 0), 2)
+        for _bbox in bboxes:
+            bbox = _bbox['bbox']
+            cv2.drawContours(text_box, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, (0, 255, 0), 2)
 
         image_name = data_loader.img_paths[idx].split('/')[-1].split('.')[0]
-        write_result_as_txt(image_name, bboxes, 'outputs/submit_ctw1500/')
+        write_pts_as_txt(image_name, bboxes, 'outputs/submit_ctw1500/')
 
         debug(idx, data_loader.img_paths, [[text_box]], 'outputs/vis_ctw1500/')
 
-    cmd = 'cd %s;zip -j %s %s/*'%('./outputs/', 'submit_ic15.zip', 'submit_ic15');
+    cmd = 'cd %s;zip -j %s %s/*' % ('./outputs/', 'submit_ctw1500.zip', 'submit_ctw1500');
     print(cmd)
     sys.stdout.flush()
     util.cmd.cmd(cmd)
@@ -95,6 +77,6 @@ if __name__ == '__main__':
                         help='min score')
     parser.add_argument('--ctw_root', type=str, default='.',
                         help='ctw1500 data root dir')
-    
+
     args = parser.parse_args()
     test(args)

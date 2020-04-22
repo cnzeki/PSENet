@@ -59,6 +59,22 @@ def write_quad_as_txt(image_name, bboxes, path):
     util.io.write_lines(filename, lines)
 
 
+def write_pts_as_txt(image_name, bboxes, path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    filename = util.io.join_path(path, '%s.txt' % (image_name))
+    lines = []
+    for b_idx, bbox in enumerate(bboxes):
+        values = [int(v) for v in bbox['bbox']]
+        line = "%d" % values[0]
+        for v_id in range(1, len(values)):
+            line += ", %d" % values[v_id]
+        line += '\n'
+        lines.append(line)
+    util.io.write_lines(filename, lines)
+
+
 def polygon_from_points(points):
     """
     Returns a Polygon object to use with the Polygon2 class from a list of 8 points: x1,y1,x2,y2,x3,y3,x4,y4
@@ -159,7 +175,10 @@ def run_PSENet(args, model, img, org_shape, out_type='rect'):
         elif out_type == 'contour':
             binary = np.zeros(label.shape, dtype='uint8')
             binary[label == i] = 1
-            _, contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            ret = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            #print(ret)
+            #_, contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours = ret[-2]
             contour = contours[0]
             # epsilon = 0.01 * cv2.arcLength(contour, True)
             # bbox = cv2.approxPolyDP(contour, epsilon, True)

@@ -2,5 +2,5 @@
 
 def cmd(cmd):
     import  subprocess
-    return subprocess.getoutput(cmd)
+    return subprocess.check_output(cmd)
 
