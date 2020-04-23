@@ -9,7 +9,7 @@ from torch.autograd import Variable
 from torch.utils import data
 
 import models
-from dataset import CTW1500Loader
+from dataset import get_dataset_by_name, OcrDataLoader
 from metrics import runningScore
 from util import Logger, AverageMeter
 
@@ -186,8 +186,9 @@ def save_checkpoint(state, checkpoint='checkpoint', filename='checkpoint.pth.tar
 
 
 def main(args):
+    title = args.title
     if args.checkpoint == '':
-        args.checkpoint = "checkpoints/ctw1500_%s_bs_%d_ep_%d" % (args.arch, args.batch_size, args.n_epoch)
+        args.checkpoint = "checkpoints/%s_%s_bs_%d_ep_%d" % (title, args.arch, args.batch_size, args.n_epoch)
     if args.pretrain:
         if 'synth' in args.pretrain:
             args.checkpoint += "_pretrain_synth"
@@ -206,7 +207,8 @@ def main(args):
     min_scale = 0.4
     start_epoch = 0
 
-    data_loader = CTW1500Loader(is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
+    train_data = get_dataset_by_name(args.dataset)
+    data_loader = OcrDataLoader(train_data, is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
     train_loader = torch.utils.data.DataLoader(
         data_loader,
         batch_size=args.batch_size,
@@ -229,7 +231,6 @@ def main(args):
     else:
         optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.99, weight_decay=5e-4)
 
-    title = 'CTW1500'
     if args.pretrain:
         print('Using pretrained model.')
         assert os.path.isfile(args.pretrain), 'Error: no checkpoint directory found!'
@@ -272,7 +273,7 @@ if __name__ == '__main__':
     parser.add_argument('--arch', nargs='?', type=str, default='resnet50')
     parser.add_argument('--img_size', nargs='?', type=int, default=640,
                         help='Height of the input image')
-    parser.add_argument('--n_epoch', nargs='?', type=int, default=600,
+    parser.add_argument('--n_epoch', nargs='?', type=int, default=100,
                         help='# of the epochs')
     parser.add_argument('--schedule', type=int, nargs='+', default=[200, 400],
                         help='Decrease learning rate at these epochs.')
@@ -286,6 +287,9 @@ if __name__ == '__main__':
                         help='Path to previous saved model to restart from')
     parser.add_argument('--checkpoint', default='', type=str, metavar='PATH',
                         help='path to save checkpoint (default: checkpoint)')
+    parser.add_argument('--title', nargs='?', type=str, default='ctw1500')
+    parser.add_argument('--dataset', type=str, help='dataset name')
+
     args = parser.parse_args()
 
     main(args)
