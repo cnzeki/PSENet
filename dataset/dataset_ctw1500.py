@@ -10,16 +10,7 @@ import numpy as np
 from deeploader.dataset.dataset_base import ArrayDataset
 
 import util
-
-
-def get_img(img_path):
-    try:
-        img = cv2.imread(img_path)
-        img = img[:, :, [2, 1, 0]]
-    except Exception as e:
-        print(img_path)
-        raise
-    return img
+from dataset.data_util import get_img
 
 
 def get_bboxes(img, gt_path):
@@ -36,11 +27,11 @@ def get_bboxes(img, gt_path):
 
         bbox = [np.int(gt[i]) for i in range(4, 32)]
         bbox = np.asarray(bbox) + ([x1 * 1.0, y1 * 1.0] * 14)
-        bbox = np.asarray(bbox) / ([w * 1.0, h * 1.0] * 14)
+        bbox = np.asarray(bbox).reshape((14, 2)).tolist()
 
         bboxes.append(bbox)
         tags.append(True)
-    return np.array(bboxes), tags
+    return bboxes, tags
 
 
 class CTW1500Dataset(ArrayDataset):
@@ -97,9 +88,7 @@ class CTW1500Dataset(ArrayDataset):
         img = get_img(img_path)
         # bbox normed to 0~1
         bboxes, tags = get_bboxes(img, gt_path)
-        # scale it back to pixel coord
-        bboxes = np.reshape(bboxes * ([img.shape[1], img.shape[0]] * 14),
-                            (bboxes.shape[0], int(bboxes.shape[1] / 2), 2)).astype('int32')
+
         item = {'img': img, 'type': 'contour', 'bboxes': bboxes, 'tags': tags,
                 'path': img_path}
         return item

@@ -10,3 +10,4 @@ from dataset.icdar2019MLT_test_loader import IC19TestLoader
 from dataset.dataset_ctw1500 import CTW1500Dataset
 from dataset.data_loader import OcrDataLoader
 from dataset.data_zoo import get_dataset_by_name
+import dataset.data_util

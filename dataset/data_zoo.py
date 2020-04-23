@@ -36,6 +36,13 @@ icdar2019art.dataset_path = '.'
 icdar2019art.split = 'train'
 dataset.icdar2019art = icdar2019art
 
+# icdar2019ReCTS
+icdar2019rects = edict()
+icdar2019rects.name = 'icdar2019rects'
+icdar2019rects.dataset_path = '.'
+icdar2019rects.split = 'train'
+dataset.icdar2019rects = icdar2019rects
+
 
 def get_dataset_by_name(name, *args, **kargs):
     print(name)
@@ -56,5 +63,9 @@ def get_dataset_by_name(name, *args, **kargs):
     elif name == 'icdar2019art':
         from dataset_icdar2019ArT import ICDAR2019ARTDataset
         data = ICDAR2019ARTDataset(ds.dataset_path, ds.split, name=ds.name)
+        return data
+    elif name == 'icdar2019rects':
+        from dataset_icdar2019ReCTS import ICDAR2019ReCTSDataset
+        data = ICDAR2019ReCTSDataset(ds.dataset_path, ds.split, name=ds.name)
         return data
     return None
