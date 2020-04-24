@@ -38,6 +38,7 @@ def get_bboxes(img, gt_path):
 class ICDAR2019MLTDataset(ArrayDataset):
     def __init__(self, data_root='.', split='train', **kargs):
         ArrayDataset.__init__(self, **kargs)
+        self.split = split
         ic15_root_dir = data_root+'/MLT2019/'
         train_data_dir = ic15_root_dir + 'train_images/'
         train_gt_dir = ic15_root_dir + 'train_gt_t13/'

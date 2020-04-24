@@ -34,6 +34,7 @@ def get_bboxes(img, gt_path):
 class ICDAR2015Dataset(ArrayDataset):
     def __init__(self, data_root='.', split='train', **kargs):
         ArrayDataset.__init__(self, **kargs)
+        self.split = split
         ic15_root_dir = data_root+'/ICDAR2015/Challenge4/'
         train_data_dir = ic15_root_dir + 'ch4_training_images/'
         train_gt_dir = ic15_root_dir + 'ch4_training_localization_transcription_gt/'
