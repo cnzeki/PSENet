@@ -208,6 +208,7 @@ def main(args):
     start_epoch = 0
 
     train_data = get_dataset_by_name(args.dataset)
+    train_data.verbose()
     data_loader = OcrDataLoader(train_data, is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
     train_loader = torch.utils.data.DataLoader(
         data_loader,

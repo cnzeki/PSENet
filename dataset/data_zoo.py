@@ -45,7 +45,21 @@ dataset.icdar2019rects = icdar2019rects
 
 
 def get_dataset_by_name(name, *args, **kargs):
-    print(name)
+    names = []
+    if isinstance(name, list):
+        names = name
+    elif isinstance(name, str):
+        names = name.split(';')
+
+    if len(names) > 1:
+        from deeploader.dataset.dataset_multi import MultiDataset
+        merged = MultiDataset();
+        for item in names:
+            ds = get_dataset_by_name(item, *args, **kargs)
+            merged.add(ds, 0)
+        return merged
+
+    # dataset factory
     ds = getattr(dataset, name)
     _, ext = os.path.splitext(ds.dataset_path)
     if name == 'ctw1500':
