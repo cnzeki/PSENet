@@ -12,7 +12,7 @@ import models
 from dataset import get_dataset_by_name, OcrDataLoader
 from metrics import runningScore
 from util import Logger, AverageMeter
-
+from data_parallel import DataParallel
 
 def ohem_single(score, gt_text, training_mask):
     pos_num = (int)(np.sum(gt_text > 0.5)) - (int)(np.sum((gt_text > 0.5) & (training_mask <= 0.5)))
@@ -154,11 +154,11 @@ def train(train_loader, model, criterion, optimizer, epoch):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if batch_idx % 20 == 0:
+        if batch_idx % 10 == 0:
             output_log = '({batch}/{size}) Batch: {bt:.3f}s | TOTAL: {total:.0f}min | ETA: {eta:.0f}min | Loss: {loss:.4f} | Acc_t: {acc: .4f} | IOU_t: {iou_t: .4f} | IOU_k: {iou_k: .4f}'.format(
-                batch=batch_idx + 1,
+                batch=batch_idx,
                 size=len(train_loader),
-                bt=batch_time.avg,
+                bt=batch_time.val,
                 total=batch_time.avg * batch_idx / 60.0,
                 eta=batch_time.avg * (len(train_loader) - batch_idx) / 60.0,
                 loss=losses.avg,
@@ -186,6 +186,7 @@ def save_checkpoint(state, checkpoint='checkpoint', filename='checkpoint.pth.tar
 
 
 def main(args):
+    # torch.backends.cudnn.benchmark = True
     title = args.title
     if args.checkpoint == '':
         args.checkpoint = "checkpoints/%s_%s_bs_%d_ep_%d" % (title, args.arch, args.batch_size, args.n_epoch)
@@ -214,7 +215,7 @@ def main(args):
         data_loader,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=3,
+        num_workers=args.num_workers,
         drop_last=True,
         pin_memory=True)
 
@@ -225,7 +226,8 @@ def main(args):
     elif args.arch == "resnet152":
         model = models.resnet152(pretrained=True, num_classes=kernel_num)
 
-    model = torch.nn.DataParallel(model).cuda()
+    model = DataParallel(model,device_ids=args.gpus,chunk_sizes=args.chunk_sizes).cuda()
+
 
     if hasattr(model.module, 'optimizer'):
         optimizer = model.module.optimizer
@@ -280,6 +282,12 @@ if __name__ == '__main__':
                         help='Decrease learning rate at these epochs.')
     parser.add_argument('--batch_size', nargs='?', type=int, default=16,
                          help='Batch Size')
+    parser.add_argument('--master_batch_size', type=int, default=-1,
+                             help='batch size on the master gpu.')
+    parser.add_argument('--gpus', default='0',
+                             help='-1 for CPU, use comma for multiple gpus')
+    parser.add_argument('--num_workers', type=int, default=4,
+                             help='dataloader threads. 0 for single-thread.')
     parser.add_argument('--lr', nargs='?', type=float, default=1e-3,
                         help='Learning Rate')
     parser.add_argument('--resume', nargs='?', type=str, default=None,
@@ -292,5 +300,19 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, help='dataset name')
 
     args = parser.parse_args()
-
+    # gpu config
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus
+    args.gpus = [int(gpu) for gpu in args.gpus.split(',')]
+    args.gpus = [i for i in range(len(args.gpus))] if args.gpus[0] >= 0 else [-1]
+    # chunk size
+    if args.master_batch_size == -1:
+        args.master_batch_size = args.batch_size // len(args.gpus)
+    rest_batch_size = (args.batch_size - args.master_batch_size)
+    args.chunk_sizes = [args.master_batch_size]
+    for i in range(len(args.gpus) - 1):
+        slave_chunk_size = rest_batch_size // (len(args.gpus) - 1)
+        if i < rest_batch_size % (len(args.gpus) - 1):
+            slave_chunk_size += 1
+        args.chunk_sizes.append(slave_chunk_size)
+    print('training chunk_sizes:', args.chunk_sizes)
     main(args)
