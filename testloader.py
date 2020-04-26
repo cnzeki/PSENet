@@ -11,10 +11,11 @@ if __name__ == '__main__':
     parser.add_argument('--n', nargs='?', type=int, default=5,
                         help='# of the epochs')
     parser.add_argument('--dataset', type=str, help='dataset name')
+    parser.add_argument('--filter', type=str, default='', help='dataset name')
 
     args = parser.parse_args()
 
-    train_data = get_dataset_by_name(args.dataset)
+    train_data = get_dataset_by_name(args.dataset, filter=args.filter)
     train_data.verbose()
 
     out_dir = 'outputs/dl_%s/' % (args.dataset)

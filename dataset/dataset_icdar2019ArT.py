@@ -52,7 +52,7 @@ class ICDAR2019ARTDataset(ArrayDataset):
         self.img_paths = []
         img_names = util.io.ls(data_dir, '.jpg')
         img_names.extend(util.io.ls(data_dir, '.png'))
-
+        img_names.sort()
         img_paths = []
         for idx, img_name in enumerate(img_names):
             img_path = data_dir + img_name
