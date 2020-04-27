@@ -1,34 +1,31 @@
-import sys
-import torch
 import argparse
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import shutil
+import os
+import sys
+import time
 
+import numpy as np
+import torch
 from torch.autograd import Variable
 from torch.utils import data
-import os
 
+import models
 from dataset import IC15Loader
 from metrics import runningScore
-import models
 from util import Logger, AverageMeter
-import time
-import util
+
 
 def ohem_single(score, gt_text, training_mask):
     pos_num = (int)(np.sum(gt_text > 0.5)) - (int)(np.sum((gt_text > 0.5) & (training_mask <= 0.5)))
-    
+
     if pos_num == 0:
         # selected_mask = gt_text.copy() * 0 # may be not good
         selected_mask = training_mask
         selected_mask = selected_mask.reshape(1, selected_mask.shape[0], selected_mask.shape[1]).astype('float32')
         return selected_mask
-    
+
     neg_num = (int)(np.sum(gt_text <= 0.5))
     neg_num = (int)(min(pos_num * 3, neg_num))
-    
+
     if neg_num == 0:
         selected_mask = training_mask
         selected_mask = selected_mask.reshape(1, selected_mask.shape[0], selected_mask.shape[1]).astype('float32')
@@ -41,6 +38,7 @@ def ohem_single(score, gt_text, training_mask):
     selected_mask = ((score >= threshold) | (gt_text > 0.5)) & (training_mask > 0.5)
     selected_mask = selected_mask.reshape(1, selected_mask.shape[0], selected_mask.shape[1]).astype('float32')
     return selected_mask
+
 
 def ohem_batch(scores, gt_texts, training_masks):
     scores = scores.data.cpu().numpy()
@@ -56,13 +54,14 @@ def ohem_batch(scores, gt_texts, training_masks):
 
     return selected_masks
 
+
 def dice_loss(input, target, mask):
     input = torch.sigmoid(input)
 
     input = input.contiguous().view(input.size()[0], -1)
     target = target.contiguous().view(target.size()[0], -1)
     mask = mask.contiguous().view(mask.size()[0], -1)
-    
+
     input = input * mask
     target = target * mask
 
@@ -73,11 +72,12 @@ def dice_loss(input, target, mask):
     dice_loss = torch.mean(d)
     return 1 - dice_loss
 
+
 def cal_text_score(texts, gt_texts, training_masks, running_metric_text):
     training_masks = training_masks.data.cpu().numpy()
     pred_text = torch.sigmoid(texts).data.cpu().numpy() * training_masks
     pred_text[pred_text <= 0.5] = 0
-    pred_text[pred_text >  0.5] = 1
+    pred_text[pred_text > 0.5] = 1
     pred_text = pred_text.astype(np.int32)
     gt_text = gt_texts.data.cpu().numpy() * training_masks
     gt_text = gt_text.astype(np.int32)
@@ -85,19 +85,21 @@ def cal_text_score(texts, gt_texts, training_masks, running_metric_text):
     score_text, _ = running_metric_text.get_scores()
     return score_text
 
+
 def cal_kernel_score(kernels, gt_kernels, gt_texts, training_masks, running_metric_kernel):
     mask = (gt_texts * training_masks).data.cpu().numpy()
     kernel = kernels[:, -1, :, :]
     gt_kernel = gt_kernels[:, -1, :, :]
     pred_kernel = torch.sigmoid(kernel).data.cpu().numpy()
     pred_kernel[pred_kernel <= 0.5] = 0
-    pred_kernel[pred_kernel >  0.5] = 1
+    pred_kernel[pred_kernel > 0.5] = 1
     pred_kernel = (pred_kernel * mask).astype(np.int32)
     gt_kernel = gt_kernel.data.cpu().numpy()
     gt_kernel = (gt_kernel * mask).astype(np.int32)
     running_metric_kernel.update(gt_kernel, pred_kernel)
     score_kernel, _ = running_metric_kernel.get_scores()
     return score_kernel
+
 
 def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
@@ -125,7 +127,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         selected_masks = Variable(selected_masks.cuda())
 
         loss_text = criterion(texts, gt_texts, selected_masks)
-        
+
         loss_kernels = []
         mask0 = torch.sigmoid(texts).data.cpu().numpy()
         mask1 = training_masks.data.cpu().numpy()
@@ -138,7 +140,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
             loss_kernel_i = criterion(kernel_i, gt_kernel_i, selected_masks)
             loss_kernels.append(loss_kernel_i)
         loss_kernel = sum(loss_kernels) / len(loss_kernels)
-        
+
         loss = 0.7 * loss_text + 0.3 * loss_kernel
         losses.update(loss.item(), imgs.size(0))
 
@@ -153,7 +155,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         end = time.time()
 
         if batch_idx % 20 == 0:
-            output_log  = '({batch}/{size}) Batch: {bt:.3f}s | TOTAL: {total:.0f}min | ETA: {eta:.0f}min | Loss: {loss:.4f} | Acc_t: {acc: .4f} | IOU_t: {iou_t: .4f} | IOU_k: {iou_k: .4f}'.format(
+            output_log = '({batch}/{size}) Batch: {bt:.3f}s | TOTAL: {total:.0f}min | ETA: {eta:.0f}min | Loss: {loss:.4f} | Acc_t: {acc: .4f} | IOU_t: {iou_t: .4f} | IOU_k: {iou_k: .4f}'.format(
                 batch=batch_idx + 1,
                 size=len(train_loader),
                 bt=batch_time.avg,
@@ -166,7 +168,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
             print(output_log)
             sys.stdout.flush()
 
-    return (losses.avg, score_text['Mean Acc'], score_kernel['Mean Acc'], score_text['Mean IoU'], score_kernel['Mean IoU'])
+    return (
+    losses.avg, score_text['Mean Acc'], score_kernel['Mean Acc'], score_text['Mean IoU'], score_kernel['Mean IoU'])
+
 
 def adjust_learning_rate(args, optimizer, epoch):
     global state
@@ -175,21 +179,23 @@ def adjust_learning_rate(args, optimizer, epoch):
         for param_group in optimizer.param_groups:
             param_group['lr'] = args.lr
 
+
 def save_checkpoint(state, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
     filepath = os.path.join(checkpoint, filename)
     torch.save(state, filepath)
 
+
 def main(args):
     if args.checkpoint == '':
-        args.checkpoint = "checkpoints/ic15_%s_bs_%d_ep_%d"%(args.arch, args.batch_size, args.n_epoch)
+        args.checkpoint = "checkpoints/ic15_%s_bs_%d_ep_%d" % (args.arch, args.batch_size, args.n_epoch)
     if args.pretrain:
         if 'synth' in args.pretrain:
             args.checkpoint += "_pretrain_synth"
         else:
             args.checkpoint += "_pretrain_ic17"
 
-    print(('checkpoint path: %s'%args.checkpoint))
-    print(('init lr: %.8f'%args.lr))
+    print(('checkpoint path: %s' % args.checkpoint))
+    print(('init lr: %.8f' % args.lr))
     print(('schedule: ', args.schedule))
     sys.stdout.flush()
 
@@ -215,9 +221,9 @@ def main(args):
         model = models.resnet101(pretrained=True, num_classes=kernel_num)
     elif args.arch == "resnet152":
         model = models.resnet152(pretrained=True, num_classes=kernel_num)
-    
+
     model = torch.nn.DataParallel(model).cuda()
-    
+
     if hasattr(model.module, 'optimizer'):
         optimizer = model.module.optimizer
     else:
@@ -230,7 +236,7 @@ def main(args):
         checkpoint = torch.load(args.pretrain)
         model.load_state_dict(checkpoint['state_dict'])
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
-        logger.set_names(['Learning Rate', 'Train Loss','Train Acc.', 'Train IOU.'])
+        logger.set_names(['Learning Rate', 'Train Loss', 'Train Acc.', 'Train IOU.'])
     elif args.resume:
         print('Resuming from checkpoint.')
         assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
@@ -242,42 +248,44 @@ def main(args):
     else:
         print('Training from scratch.')
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
-        logger.set_names(['Learning Rate', 'Train Loss','Train Acc.', 'Train IOU.'])
+        logger.set_names(['Learning Rate', 'Train Loss', 'Train Acc.', 'Train IOU.'])
 
     for epoch in range(start_epoch, args.n_epoch):
         adjust_learning_rate(args, optimizer, epoch)
         print(('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.n_epoch, optimizer.param_groups[0]['lr'])))
 
-        train_loss, train_te_acc, train_ke_acc, train_te_iou, train_ke_iou = train(train_loader, model, dice_loss, optimizer, epoch)
+        train_loss, train_te_acc, train_ke_acc, train_te_iou, train_ke_iou = train(train_loader, model, dice_loss,
+                                                                                   optimizer, epoch)
         save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'lr': args.lr,
-                'optimizer' : optimizer.state_dict(),
-            }, checkpoint=args.checkpoint)
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'lr': args.lr,
+            'optimizer': optimizer.state_dict(),
+        }, checkpoint=args.checkpoint)
 
         logger.append([optimizer.param_groups[0]['lr'], train_loss, train_te_acc, train_te_iou])
     logger.close()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hyperparams')
     parser.add_argument('--arch', nargs='?', type=str, default='resnet50')
-    parser.add_argument('--img_size', nargs='?', type=int, default=640, 
+    parser.add_argument('--img_size', nargs='?', type=int, default=640,
                         help='Height of the input image')
-    parser.add_argument('--n_epoch', nargs='?', type=int, default=600, 
+    parser.add_argument('--n_epoch', nargs='?', type=int, default=600,
                         help='# of the epochs')
     parser.add_argument('--schedule', type=int, nargs='+', default=[200, 400],
                         help='Decrease learning rate at these epochs.')
-    parser.add_argument('--batch_size', nargs='?', type=int, default=16, 
+    parser.add_argument('--batch_size', nargs='?', type=int, default=16,
                         help='Batch Size')
-    parser.add_argument('--lr', nargs='?', type=float, default=1e-3, 
+    parser.add_argument('--lr', nargs='?', type=float, default=1e-3,
                         help='Learning Rate')
-    parser.add_argument('--resume', nargs='?', type=str, default=None,    
+    parser.add_argument('--resume', nargs='?', type=str, default=None,
                         help='Path to previous saved model to restart from')
-    parser.add_argument('--pretrain', nargs='?', type=str, default=None,    
+    parser.add_argument('--pretrain', nargs='?', type=str, default=None,
                         help='Path to previous saved model to restart from')
     parser.add_argument('--checkpoint', default='', type=str, metavar='PATH',
-                    help='path to save checkpoint (default: checkpoint)')
+                        help='path to save checkpoint (default: checkpoint)')
     args = parser.parse_args()
 
     main(args)

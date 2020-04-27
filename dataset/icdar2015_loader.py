@@ -11,7 +11,7 @@ import torch
 import pyclipper
 import Polygon as plg
 
-ic15_root_dir = './data/ICDAR2015/Challenge4/'
+ic15_root_dir = './ICDAR2015/Challenge4/'
 ic15_train_data_dir = ic15_root_dir + 'ch4_training_images/'
 ic15_train_gt_dir = ic15_root_dir + 'ch4_training_localization_transcription_gt/'
 ic15_test_data_dir = ic15_root_dir + 'ch4_test_images/'
@@ -145,13 +145,13 @@ def shrink(bboxes, rate, max_shr=20):
     return np.array(shrinked_bboxes)
 
 class IC15Loader(data.Dataset):
-    def __init__(self, is_transform=False, img_size=None, kernel_num=7, min_scale=0.4):
+    def __init__(self, is_transform=False, img_size=None, kernel_num=7, min_scale=0.4, debug=False):
         self.is_transform = is_transform
         
         self.img_size = img_size if (img_size is None or isinstance(img_size, tuple)) else (img_size, img_size)
         self.kernel_num = kernel_num
         self.min_scale = min_scale
-
+        self.debug = debug
         data_dirs = [ic15_train_data_dir]
         gt_dirs = [ic15_train_gt_dir]
 
@@ -195,8 +195,12 @@ class IC15Loader(data.Dataset):
             bboxes = np.reshape(bboxes * ([img.shape[1], img.shape[0]] * 4), (bboxes.shape[0], bboxes.shape[1] / 2, 2)).astype('int32')
             for i in range(bboxes.shape[0]):
                 cv2.drawContours(gt_text, [bboxes[i]], -1, i + 1, -1)
+                if self.debug:
+                    img = cv2.drawContours(img, [bboxes[i]], -1, (0, 255, 0), 2)
                 if not tags[i]:
                     cv2.drawContours(training_mask, [bboxes[i]], -1, 0, -1)
+                    if self.debug:
+                        img = cv2.drawContours(img, [bboxes[i]], -1, (0, 0, 255), 2)
 
         gt_kernels = []
         for i in range(1, self.kernel_num):

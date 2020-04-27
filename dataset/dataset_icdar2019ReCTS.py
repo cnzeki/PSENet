@@ -46,6 +46,7 @@ class ICDAR2019ReCTSDataset(ArrayDataset):
             data_dir = test_data_dir
             gt_dir = test_gt_path
 
+        self.random_scale = np.array([0.5, 0.7, 1.0, 1.2])
         # scan images
         self.img_paths = []
         img_names = util.io.ls(data_dir, '.jpg')

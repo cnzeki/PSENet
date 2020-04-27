@@ -13,6 +13,9 @@ from dataset import get_dataset_by_name, OcrDataLoader
 from metrics import runningScore
 from util import Logger, AverageMeter
 from data_parallel import DataParallel
+from dataset import CTW1500Loader
+from dataset import IC15Loader
+
 
 def ohem_single(score, gt_text, training_mask):
     pos_num = (int)(np.sum(gt_text > 0.5)) - (int)(np.sum((gt_text > 0.5) & (training_mask <= 0.5)))
@@ -208,9 +211,10 @@ def main(args):
     min_scale = 0.4
     start_epoch = 0
 
-    train_data = get_dataset_by_name(args.dataset)
-    train_data.verbose()
-    data_loader = OcrDataLoader(train_data, is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
+
+    #data_loader = CTW1500Loader(is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
+    #data_loader = IC15Loader(is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
+    data_loader = OcrDataLoader(args, is_transform=True, img_size=args.img_size, kernel_num=kernel_num, min_scale=min_scale)
     train_loader = torch.utils.data.DataLoader(
         data_loader,
         batch_size=args.batch_size,
@@ -298,6 +302,7 @@ if __name__ == '__main__':
                         help='path to save checkpoint (default: checkpoint)')
     parser.add_argument('--title', nargs='?', type=str, default='ctw1500')
     parser.add_argument('--dataset', type=str, help='dataset name')
+    parser.add_argument('--filter', type=str, default='', help='dataset filter')
 
     args = parser.parse_args()
     # gpu config

@@ -4,7 +4,7 @@ import Polygon as plg
 import cv2
 import numpy as np
 import pyclipper
-
+import math
 
 def get_img(img_path):
     try:
@@ -42,18 +42,24 @@ def img_scale_max(img, long_size=2240):
     return img
 
 
-def random_scale(img, min_size):
+def random_scale(img, min_size, random_scale=np.array([0.5, 1.0, 2.0, 3.0])):
     h, w = img.shape[0:2]
+    ori_dim = float(max(h, w))
     if max(h, w) > 1280:
         scale = 1280.0 / max(h, w)
         img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
 
     h, w = img.shape[0:2]
-    random_scale = np.array([0.5, 1.0, 2.0, 3.0])
+
     scale = np.random.choice(random_scale)
+    # if min(h, w) * scale > 1280:
+    #      scale = 1280 / max(h, w)
     if min(h, w) * scale <= min_size:
         scale = (min_size + 10) * 1.0 / min(h, w)
     img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
+
+    h, w = img.shape[0:2]
+    scale = max(h, w)/ori_dim
     return img, scale
 
 

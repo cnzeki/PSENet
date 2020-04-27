@@ -4,12 +4,16 @@ from PIL import Image
 from torch.utils import data
 
 from data_util import *
+from data_zoo import get_dataset_by_name
 
 
 class OcrDataLoader(data.Dataset):
-    def __init__(self, dataset, is_transform=False, img_size=None, kernel_num=7, min_scale=0.4):
+    def __init__(self, args, is_transform=False, img_size=None, kernel_num=7, min_scale=0.4, debug=False):
         # dataset
+        dataset = get_dataset_by_name(args.dataset, filter=args.filter)
+        dataset.verbose()
         self.dataset = dataset
+        self.debug = debug
         # transform params
         self.is_transform = is_transform
         self.img_size = img_size if (img_size is None or isinstance(img_size, tuple)) else (img_size, img_size)
@@ -20,7 +24,7 @@ class OcrDataLoader(data.Dataset):
         return self.dataset.size()
 
     def __getitem__(self, index):
-        item = self.dataset[index]
+        item = self.dataset.getData(index)
 
         img = item['img']
         bboxes, tags = item['bboxes'], item['tags']
@@ -28,18 +32,29 @@ class OcrDataLoader(data.Dataset):
         for idx, box in enumerate(bboxes):
             bboxes[idx] = np.array(box)
         if self.is_transform:
-            img, scale = random_scale(img, self.img_size[0])
+            if hasattr(self.dataset, 'random_scale'):
+                img, scale = random_scale(img, self.img_size[0], self.dataset.random_scale)
+            else:
+                img, scale = random_scale(img, self.img_size[0])
             for idx, box in enumerate(bboxes):
                 sb = box * scale
                 bboxes[idx] = sb.astype('int32')
+        else:
+            for idx, box in enumerate(bboxes):
+                bboxes[idx] = bboxes[idx].astype('int32')
 
         gt_text = np.zeros(img.shape[0:2], dtype='uint8')
         training_mask = np.ones(img.shape[0:2], dtype='uint8')
         if num > 0:
             for i in range(num):
                 cv2.drawContours(gt_text, [bboxes[i]], -1, i + 1, -1)
+                if self.debug:
+                    img = cv2.drawContours(img, [bboxes[i]], -1, (0, 255, 0), 2)
                 if not tags[i]:
                     cv2.drawContours(training_mask, [bboxes[i]], -1, 0, -1)
+                    if self.debug:
+                        img = cv2.drawContours(img, [bboxes[i]], -1, (0, 0, 255), 2)
+
 
         gt_kernals = []
         for i in range(1, self.kernel_num):
