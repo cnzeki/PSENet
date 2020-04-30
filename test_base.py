@@ -20,7 +20,7 @@ import models
 import util
 # c++ version pse based on opencv 3+
 from pse import pse
-
+from dataset import get_dataset_by_name
 
 # python pse
 # from pypse import pse as pypse
@@ -90,7 +90,81 @@ def polygon_from_points(points):
     return plg.Polygon(pointMat)
 
 
+def polygon_intersection(pD, pG):
+    pInt = pD & pG
+    if len(pInt) == 0:
+        return 0
+    return pInt.area()
+
+
+def polygon_union(pD, pG):
+    areaA = pD.area();
+    areaB = pG.area();
+    return areaA + areaB - polygon_intersection(pD, pG);
+
+
+def eval_score(pred_list, gt_list, gt_tag_list, th=0.5):
+    tp, fp, npos = 0, 0, 0
+    nign = 0
+    # loop all images
+    num = len(pred_list)
+    for i in range(num):
+        # load prediction & gt
+        preds = pred_list[i]
+        gts = gt_list[i]
+        tags = gt_tag_list[i]
+
+        # npos += len(gts)
+        gt_polys = []
+        for gt_id, gt in enumerate(gts):
+            gt = np.array(gt).reshape(-1)
+            gt = gt.reshape(int(gt.shape[0] / 2), 2)
+            gt_p = plg.Polygon(gt)
+            gt_polys.append(gt_p)
+            if tags[gt_id]:
+                npos += 1
+        # match predictions for the image
+        # print(preds)
+        cover = set()
+        for pred_id, pred in enumerate(preds):
+            pred = np.array(pred).reshape(-1)
+            pred = pred.reshape(int(pred.shape[0] / 2), 2)
+            # if pred.shape[0] <= 2:
+            #     continue
+            pred_p = plg.Polygon(pred)
+
+            flag = False
+            matched_to_ignore = False
+            for gt_id, gt_p in enumerate(gt_polys):
+                union = polygon_union(pred_p, gt_p)
+                inter = polygon_intersection(pred_p, gt_p)
+                #  IoU(pred, gt) > th => accept
+                if inter * 1.0 / union >= th:
+                    if gt_id not in cover:
+                        flag = True
+                        cover.add(gt_id)
+                        if not tags[gt_id]:
+                            matched_to_ignore = True
+                        break
+            if matched_to_ignore:
+                nign += 1.0
+                # print('matched to ignore gt')
+                continue
+            if flag:
+                tp += 1.0
+            else:
+                fp += 1.0
+
+    # ok, finish the job
+    # print(tp, fp, npos, nign)
+    precision = tp / (tp + fp)
+    recall = tp / npos
+    hmean = 0 if (precision + recall) == 0 else 2.0 * precision * recall / (precision + recall)
+    return precision, recall, hmean, (tp, fp, npos, nign)
+
+
 def load_model(args):
+    epoch = 0
     # Setup Model
     if args.arch == "resnet50":
         model = models.resnet50(pretrained=True, num_classes=7, scale=args.scale)
@@ -115,7 +189,7 @@ def load_model(args):
                 tmp = key[7:]
                 d[tmp] = value
             model.load_state_dict(d)
-
+            epoch = checkpoint['epoch']
             print(("Loaded checkpoint '{}' (epoch {})"
                    .format(args.resume, checkpoint['epoch'])))
             sys.stdout.flush()
@@ -124,7 +198,7 @@ def load_model(args):
             sys.stdout.flush()
 
     model.eval()
-    return model
+    return model, epoch
 
 
 def run_PSENet(args, model, img, org_shape, out_type='rect'):
@@ -174,8 +248,8 @@ def run_PSENet(args, model, img, org_shape, out_type='rect'):
             binary = np.zeros(label.shape, dtype='uint8')
             binary[label == i] = 1
             ret = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            #print(ret)
-            #_, contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            # print(ret)
+            # _, contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             contours = ret[-2]
             contour = contours[0]
             # epsilon = 0.01 * cv2.arcLength(contour, True)
@@ -210,6 +284,64 @@ def img_preprocess(org_img, precession=960, cuda=torch.cuda.is_available()):
     else:
         img = Variable(scaled_img)
     return img
+
+
+def test_model(args, model, data_loader):
+    # collect labels
+    gt_bbox_list = []
+    gt_tag_list = []
+    pred_list = []
+    for idx, item in enumerate(data_loader):
+        # read in RGB
+        org_img = item['img']
+        gt_bboxes = item['bboxes']
+        gt_tags = item['tags']
+        gt_bbox_list.append(gt_bboxes)
+        gt_tag_list.append(gt_tags)
+
+        img = img_preprocess(org_img, args.long_size)
+
+        torch.cuda.synchronize()
+        pred_rets = run_PSENet(args, model, img, org_img.shape, out_type=args.out_type)
+        torch.cuda.synchronize()
+        pred_bboxes = []
+        for item in pred_rets:
+            pred_bboxes.append(item['bbox'])
+        pred_list.append(pred_bboxes)
+
+    return eval_score(pred_list, gt_bbox_list, gt_tag_list, th=0.5)
+
+
+def run_tests(args, model, epoch, test_model_fn=test_model):
+    # model single gpu  eval mode
+    if hasattr(model, 'module'):
+        model = model.module
+    model.eval()
+    torch.cuda.empty_cache()
+    hmean_dict = {}
+    print('\nTest @ epoch: %d' % (epoch + 1))
+    for dataset in args.vals:
+        # build loader
+        data_loader = get_dataset_by_name(dataset, split='test')
+        precision, recall, hmean, cnts = test_model_fn(args, model, data_loader)
+        print('Val:%10s, imgs:%d, ' % (dataset, len(data_loader)), end='')
+        print('tp:%4d, fp:%4d, npos:%4d, ' % (cnts[0], cnts[1], cnts[2]), end='')
+        print('P: %.4f, R: %.4f, F1: %.4f' % (precision, recall, hmean))
+        hmean_dict[dataset] = hmean
+    # return target
+    target = args.val_target if args.val_target else 'mean()'
+    if target in ['mean()', 'sum()']:
+        sum_hmean = 0.0
+        num = 0
+        for v in hmean_dict.values():
+            sum_hmean += v
+            num += 1
+        target = sum_hmean / num
+    else:
+        target = hmean_dict[target]
+    # back to training mode
+    model.train()
+    return target
 
 
 def default_parser():

@@ -5,8 +5,9 @@ from __future__ import print_function
 
 import time
 
-from deeploader.util.fileutil import read_lines
+from deeploader.util.fileutil import read_lines, makedirs
 from torch.utils import data
+from tqdm import tqdm
 
 from dataset import CTW1500TestLoader
 from test_base import *
@@ -88,7 +89,7 @@ def test(args):
     if not args.title:
         args.title = os.path.basename(args.demo).split('.')[0]
     print('Run test %s' % args.title)
-    model = load_model(args)
+    model, epoch = load_model(args)
     total_frame = 0.0
     total_time = 0.0
     for idx, (image_name, org_img) in enumerate(test_loader):
@@ -121,8 +122,61 @@ def test(args):
         debug(idx, image_name, [[text_box]], 'outputs/vis_%s/'% args.title)
 
 
+def test_model_debug(args, model, data_loader):
+    title = data_loader.name
+    # collect labels
+    gt_bbox_list = []
+    gt_tag_list = []
+    pred_list = []
+    bar = tqdm(total=len(data_loader))
+    for idx, item in enumerate(data_loader):
+        # read in RGB
+        org_img = item['img']
+        gt_bboxes = item['bboxes']
+        gt_tags = item['tags']
+        img_path = item['path']
+        gt_bbox_list.append(gt_bboxes)
+        gt_tag_list.append(gt_tags)
+
+        img = img_preprocess(org_img, args.long_size)
+
+        torch.cuda.synchronize()
+        pred_rets = run_PSENet(args, model, img, org_img.shape, out_type=args.out_type)
+        torch.cuda.synchronize()
+        pred_bboxes = []
+        for item in pred_rets:
+            pred_bboxes.append(item['bbox'])
+        pred_list.append(pred_bboxes)
+
+        # back to BGR
+        org_img = org_img[:, :, [2, 1, 0]]
+        # draw pred
+        pred_color = (0, 0, 255)
+        gt_color = (0, 255, 0)
+        ignore_color = (0, 255, 255)
+        # gt
+        for gt_id, bbox in enumerate(gt_bboxes):
+            color = gt_color if gt_tags[gt_id] else ignore_color
+            # print(bbox)
+            bbox = np.array(bbox).reshape(-1).astype('int32')
+            org_img=cv2.drawContours(org_img, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, color, 1)
+        # pred
+        for bbox in pred_bboxes:
+            bbox = np.array(bbox).reshape(-1)
+            org_img=cv2.drawContours(org_img, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, pred_color, 1)
+        # save image
+        img_name = os.path.basename(img_path)
+        dst_path = 'outputs/pred_%s/%s' % (title, img_name)
+        makedirs(dst_path)
+        cv2.imwrite(dst_path, org_img)
+        bar.update(1)
+    bar.close()
+    return eval_score(pred_list, gt_bbox_list, gt_tag_list, th=0.5)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hyperparams')
+    # model params
     parser.add_argument('--arch', nargs='?', type=str, default='resnet50')
     parser.add_argument('--resume', nargs='?', type=str, default=None,
                         help='Path to previous saved model to restart from')
@@ -140,7 +194,8 @@ if __name__ == '__main__':
                         help='min area')
     parser.add_argument('--min_score', nargs='?', type=float, default=0.93,
                         help='min score')
-    parser.add_argument('--demo', type=str, default='.',
+    # test image
+    parser.add_argument('--demo', type=str, default='',
                         help='data to be tested can be list | dir | video')
     parser.add_argument('--test_num', type=int, default=0,
                         help='num of images to test')
@@ -150,6 +205,15 @@ if __name__ == '__main__':
                         help='title for the test')
     parser.add_argument('--submit', action='store_true',
                              help='save submit output.')
+    # eval
+    parser.add_argument('--vals', type=str, default='', help='validate dataset names')
+    parser.add_argument('--val_target', type=str, default='', help='validate targets')
 
     args = parser.parse_args()
-    test(args)
+    args.vals = args.vals.split(';') if args.vals else []
+    print('vals:', args.vals)
+    if args.vals:
+        model, epoch = load_model(args)
+        run_tests(args, model, epoch, test_model_debug)
+    else:
+        test(args)

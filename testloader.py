@@ -64,7 +64,8 @@ def test_loader(args):
         img = ((img * std + mean) * 255).astype('uint8')
         # HWC
         img = img.transpose((1, 2, 0))
-        print(img.shape)
+        if i == 0:
+            print('img.shape: ', img.shape)
 
         # gt
         gt_text = gt_text.cpu().numpy()
@@ -85,6 +86,10 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, help='dataset name')
     parser.add_argument('--filter', type=str, default='', help='dataset filter')
     args = parser.parse_args()
-    test_dataset(args)
-    test_loader(args)
+    args.vals = args.dataset.split(';') if args.dataset else []
+    print('vals:', args.vals)
+    for dataset in args.vals:
+        args.dataset = dataset
+        test_dataset(args)
+        # test_loader(args)
     # exit(0)

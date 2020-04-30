@@ -1,3 +1,4 @@
+from __future__ import print_function
 import argparse
 import os
 import sys
@@ -15,6 +16,7 @@ from util import Logger, AverageMeter
 from data_parallel import DataParallel
 from dataset import CTW1500Loader
 from dataset import IC15Loader
+from test_base import img_preprocess, run_tests
 
 
 def ohem_single(score, gt_text, training_mask):
@@ -202,6 +204,8 @@ def main(args):
     print(('checkpoint path: %s' % args.checkpoint))
     print(('init lr: %.8f' % args.lr))
     print(('schedule: ', args.schedule))
+    args.vals = args.vals.split(';') if args.vals else []
+    print('vals:', args.vals)
     sys.stdout.flush()
 
     if not os.path.isdir(args.checkpoint):
@@ -230,13 +234,17 @@ def main(args):
     elif args.arch == "resnet152":
         model = models.resnet152(pretrained=True, num_classes=kernel_num)
 
-    model = DataParallel(model,device_ids=args.gpus,chunk_sizes=args.chunk_sizes).cuda()
-
-
-    if hasattr(model.module, 'optimizer'):
+    if len(args.gpus) > 1:
+        model = DataParallel(model,device_ids=args.gpus,chunk_sizes=args.chunk_sizes).cuda()
         optimizer = model.module.optimizer
     else:
+        model = model.cuda()
         optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.99, weight_decay=5e-4)
+
+    # if hasattr(model.module, 'optimizer'):
+    #     optimizer = model.module.optimizer
+    # else:
+    #     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.99, weight_decay=5e-4)
 
     if args.pretrain:
         print('Using pretrained model.')
@@ -258,12 +266,28 @@ def main(args):
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
         logger.set_names(['Learning Rate', 'Train Loss', 'Train Acc.', 'Train IOU.'])
 
+    best_target = {'epoch': 0, 'val': 0}
     for epoch in range(start_epoch, args.n_epoch):
         adjust_learning_rate(args, optimizer, epoch)
         print(('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.n_epoch, optimizer.param_groups[0]['lr'])))
 
         train_loss, train_te_acc, train_ke_acc, train_te_iou, train_ke_iou = train(train_loader, model, dice_loss,
                                                                                    optimizer, epoch)
+        # validate
+        if args.vals:
+            target = run_tests(args, model, epoch)
+            # save best model
+            if target > best_target['val']:
+                best_target['val'] = target
+                best_target['epoch'] = epoch+1
+                save_checkpoint({
+                    'epoch': epoch + 1,
+                    'state_dict': model.state_dict(),
+                    'lr': args.lr,
+                    'optimizer': optimizer.state_dict(),
+                }, checkpoint=args.checkpoint, filename='best.pth.tar')
+            print('best_target: epoch: %d,  val:%.4f' % (best_target['epoch'], best_target['val']))
+        # save latest model
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
@@ -277,6 +301,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hyperparams')
+    # training part
     parser.add_argument('--arch', nargs='?', type=str, default='resnet50')
     parser.add_argument('--img_size', nargs='?', type=int, default=640,
                         help='Height of the input image')
@@ -303,7 +328,27 @@ if __name__ == '__main__':
     parser.add_argument('--title', nargs='?', type=str, default='ctw1500')
     parser.add_argument('--dataset', type=str, help='dataset name')
     parser.add_argument('--filter', type=str, default='', help='dataset filter')
-
+    # testing part
+    parser.add_argument('--vals', type=str, default='', help='validate dataset names')
+    parser.add_argument('--val_target', type=str, default='', help='validate targets')
+    parser.add_argument('--binary_th', nargs='?', type=float, default=1.0,
+                        help='Path to previous saved model to restart from')
+    parser.add_argument('--kernel_num', nargs='?', type=int, default=7,
+                        help='Path to previous saved model to restart from')
+    parser.add_argument('--scale', nargs='?', type=int, default=1,
+                        help='Path to previous saved model to restart from')
+    parser.add_argument('--long_size', nargs='?', type=int, default=1280,
+                        help='Path to previous saved model to restart from')
+    parser.add_argument('--min_kernel_area', nargs='?', type=float, default=10.0,
+                        help='min kernel area')
+    parser.add_argument('--min_area', nargs='?', type=float, default=300.0,
+                        help='min area')
+    parser.add_argument('--min_score', nargs='?', type=float, default=0.93,
+                        help='min score')
+    parser.add_argument('--test_num', type=int, default=0,
+                        help='num of images to test')
+    parser.add_argument('--out_type', type=str, default='contour',
+                        help='rect | rbox | contour')
     args = parser.parse_args()
     # gpu config
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus

@@ -46,6 +46,13 @@ icdar2019rects.dataset_path = '.'
 icdar2019rects.split = 'train'
 dataset.icdar2019rects = icdar2019rects
 
+# icdar2019ReCTS
+msratd500 = edict()
+msratd500.name = 'msratd500'
+msratd500.dataset_path = '.'
+msratd500.split = 'train'
+dataset.msratd500 = msratd500
+
 
 class SplitDataset(ArrayDataset):
     def __init__(self, dataset, filter=None, name='--'):
@@ -102,7 +109,6 @@ class SplitDataset(ArrayDataset):
         return self.dataset.getData(self.ibuf[index])
 
 
-
 def get_dataset_by_name(name, *args, **kargs):
     names = []
     if isinstance(name, list):
@@ -122,21 +128,27 @@ def get_dataset_by_name(name, *args, **kargs):
     ds = getattr(dataset, name)
     _, ext = os.path.splitext(ds.dataset_path)
     data = None
+    split = ds.split
+    if 'split' in kargs:
+        split = kargs['split']
     if name == 'ctw1500':
         from dataset_ctw1500 import CTW1500Dataset
-        data = CTW1500Dataset(ds.dataset_path, ds.split, name=ds.name)
+        data = CTW1500Dataset(ds.dataset_path, split, name=ds.name)
     elif name == 'icdar2015':
         from dataset_icdar2015 import ICDAR2015Dataset
-        data = ICDAR2015Dataset(ds.dataset_path, ds.split, name=ds.name)
+        data = ICDAR2015Dataset(ds.dataset_path, split, name=ds.name)
     elif name == 'icdar2019mlt':
         from dataset_icdar2019MLT import ICDAR2019MLTDataset
-        data = ICDAR2019MLTDataset(ds.dataset_path, ds.split, name=ds.name)
+        data = ICDAR2019MLTDataset(ds.dataset_path, split, name=ds.name)
     elif name == 'icdar2019art':
         from dataset_icdar2019ArT import ICDAR2019ARTDataset
-        data = ICDAR2019ARTDataset(ds.dataset_path, ds.split, name=ds.name)
+        data = ICDAR2019ARTDataset(ds.dataset_path, split, name=ds.name)
     elif name == 'icdar2019rects':
         from dataset_icdar2019ReCTS import ICDAR2019ReCTSDataset
-        data = ICDAR2019ReCTSDataset(ds.dataset_path, ds.split, name=ds.name)
+        data = ICDAR2019ReCTSDataset(ds.dataset_path, split, name=ds.name)
+    elif name == 'msratd500':
+        from dataset_msratd500 import MSRATD500Dataset
+        data = MSRATD500Dataset(ds.dataset_path, split, name=ds.name)
 
     if 'filter' in kargs and kargs['filter']:
         data = SplitDataset(data, kargs['filter'], data.name)
