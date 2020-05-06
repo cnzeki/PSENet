@@ -73,6 +73,17 @@ def write_pts_as_txt(image_name, bboxes, path):
     util.io.write_lines(filename, lines)
 
 
+def load_pts_from_txt(path):
+    bboxes = []
+    with open(path, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            segs = line.split(',')
+            vals = [int(seg.strip()) for seg in segs]
+            bboxes.append(vals)
+    return bboxes
+
+
 def polygon_from_points(points):
     """
     Returns a Polygon object to use with the Polygon2 class from a list of 8 points: x1,y1,x2,y2,x3,y3,x4,y4
@@ -155,13 +166,13 @@ def match_OM(gt_list, pred_list, tr, tc, weight):
     for gt_id, gt_item in enumerate(gt_list):
         if not gt_item['valid'] or gt_item['matches']:
             continue
-        pred_p = pred_item['poly']
+        gt_p = gt_item['poly']
         matches = []
         union = None
         for pred_id, pred_item in enumerate(pred_list):
             if not pred_item['valid'] or pred_item['matches']:
                 continue
-            gt_p = gt_item['poly']
+            pred_p = pred_item['poly']
             inter = polygon_intersection(pred_p, gt_p)
             pred_area = pred_p.area()
             if inter * 1.0 / pred_area >= tr:
@@ -191,7 +202,7 @@ def get_hmean(precision, recall):
     return hmean
 
 
-def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8):
+def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8, wr=1.0, wp=1.0):
     num_gts = 0
     num_preds = 0
     # GTs
@@ -209,7 +220,8 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8):
     for pred_id, pred in enumerate(preds):
         pred = np.array(pred).reshape(-1)
         pred = pred.reshape(int(pred.shape[0] / 2), 2)
-        item = {'poly': gt_p, 'valid': True, 'matches':[]}
+        pred_p = plg.Polygon(pred)
+        item = {'poly': pred_p, 'valid': True, 'matches':[]}
         pred_list.append(item)
     # match with ignored GTs
     num_preds = len(pred_list)
@@ -234,6 +246,7 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8):
         if not pred_item['valid']:
             continue
         # match with GTs
+        flag = False
         pred_p = pred_item['poly']
         for gt_id, gt_item in enumerate(gt_list):
             gt_p = gt_item['poly']
@@ -249,18 +262,15 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8):
             precision += 1.0
             recall += 1.0
     # match OM One GT to Many dets
-    p, r = match_OM(gt_list, pred_list, tr, tc, 1.0)
+    p, r = match_OM(gt_list, pred_list, tr, tc, wr)
     precision += p
     recall += r
     # match MO Many GTs to One det
-    r, p = match_OM(pred_list, gt_list, tp, tc, 1.0)
+    r, p = match_OM(pred_list, gt_list, tp, tc, wp)
     precision += p
     recall += r
 
-    avg_precision = precision/num_preds
-    avg_recall = recall/num_gts
-    hmean = get_hmean(avg_precision, avg_recall)
-    return avg_precision, avg_recall, hmean, (recall, num_preds-precision, num_gts, num_igns)
+    return (precision, num_preds, recall, num_gts)
 
 
 def eval_score_IoU(pred_list, gt_list, gt_tag_list, th=0.5):
@@ -288,9 +298,9 @@ def eval_score_IoU(pred_list, gt_list, gt_tag_list, th=0.5):
     return precision, recall, hmean, (tp, fp, npos, nign)
 
 
-def eval_score_IC15(pred_list, gt_list, gt_tag_list, th=0.5):
-    tp, fp, npos = 0, 0, 0
-    nign = 0
+def eval_score_IC15(pred_list, gt_list, gt_tag_list, th=0.5, tr=0.4, tp=0.4, tc=0.8, wr=1.0, wp=1.0):
+    sum_precision, num_preds = 0, 0
+    sum_recall, num_gts = 0, 0
     # loop all images
     num = len(pred_list)
     for i in range(num):
@@ -300,17 +310,27 @@ def eval_score_IC15(pred_list, gt_list, gt_tag_list, th=0.5):
         tags = gt_tag_list[i]
 
         # IoU score
-        rets = score_by_IoU(gts, tags, preds, th=th)
-        tp += rets[0]
-        fp += rets[1]
-        npos += rets[2]
-        nign += rets[3]
+        rets = score_by_IC15(gts, tags, preds, th, tr, tp, tc, wr, wp)
+        sum_precision += rets[0]
+        num_preds += rets[1]
+        sum_recall += rets[2]
+        num_gts += rets[3]
     # ok, finish the job
     # print(tp, fp, npos, nign)
-    precision = tp / (tp + fp)
-    recall = tp / npos
+    precision = sum_precision / float(num_preds)
+    recall = sum_recall / float(num_gts)
     hmean = 0 if (precision + recall) == 0 else 2.0 * precision * recall / (precision + recall)
-    return precision, recall, hmean, (tp, fp, npos, nign)
+    return precision, recall, hmean, (sum_precision, num_preds, sum_recall, num_gts)
+
+
+def eval_score(args, pred_list, gt_list, gt_tag_list):
+    if args.method == 'iou':
+        return eval_score_IoU(pred_list, gt_list, gt_tag_list, args.th)
+    elif args.method == 'ic15':
+        return eval_score_IC15(pred_list, gt_list, gt_tag_list,th=args.th,
+                               tr=args.tr, tp=args.tp, tc=args.tc, wr=args.wr, wp=args.wp)
+    else:
+        raise Exception("Unknown eval method:%s" % args.method)
 
 
 def load_model(args):
@@ -459,7 +479,7 @@ def test_model(args, model, data_loader):
             pred_bboxes.append(item['bbox'])
         pred_list.append(pred_bboxes)
 
-    return eval_score(pred_list, gt_bbox_list, gt_tag_list, th=0.5)
+    return eval_score(args, pred_list, gt_bbox_list, gt_tag_list)
 
 
 def run_tests(args, model, epoch, test_model_fn=test_model):
@@ -475,7 +495,7 @@ def run_tests(args, model, epoch, test_model_fn=test_model):
         data_loader = get_dataset_by_name(dataset, split='test')
         precision, recall, hmean, cnts = test_model_fn(args, model, data_loader)
         print('Val:%10s, imgs:%d, ' % (dataset, len(data_loader)), end='')
-        print('tp:%4d, fp:%4d, npos:%4d, ' % (cnts[0], cnts[1], cnts[2]), end='')
+        print('det:%4d, recall:%4d, ' % (cnts[0], cnts[1]), end='')
         print('P: %.4f, R: %.4f, F1: %.4f' % (precision, recall, hmean))
         hmean_dict[dataset] = hmean
     # return target
@@ -513,3 +533,18 @@ def default_parser():
                         help='min area')
     parser.add_argument('--min_score', nargs='?', type=float, default=0.93,
                         help='min score')
+    # eval param
+    parser.add_argument('--method', type=str, default='iou',
+                        help='eval method [iou | ic15]')
+    parser.add_argument('--th', type=float, default=0.5,
+                        help='iou thresh')
+    parser.add_argument('--tr', type=float, default=0.4,
+                        help='iou thresh')
+    parser.add_argument('--tp', type=float, default=0.4,
+                        help='iou thresh')
+    parser.add_argument('--tc', type=float, default=0.8,
+                        help='iou thresh')
+    parser.add_argument('--wr', type=float, default=1.0,
+                        help='iou thresh')
+    parser.add_argument('--wp', type=float, default=1.0,
+                        help='iou thresh')

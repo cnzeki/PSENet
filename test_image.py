@@ -171,7 +171,7 @@ def test_model_debug(args, model, data_loader):
         cv2.imwrite(dst_path, org_img)
         bar.update(1)
     bar.close()
-    return eval_score(pred_list, gt_bbox_list, gt_tag_list, th=0.5)
+    return eval_score(args, pred_list, gt_bbox_list, gt_tag_list)
 
 
 if __name__ == '__main__':
@@ -208,7 +208,21 @@ if __name__ == '__main__':
     # eval
     parser.add_argument('--vals', type=str, default='', help='validate dataset names')
     parser.add_argument('--val_target', type=str, default='', help='validate targets')
-
+    # eval param
+    parser.add_argument('--method', type=str, default='iou',
+                        help='eval method [iou | ic15]')
+    parser.add_argument('--th', type=float, default=0.5,
+                        help='iou thresh')
+    parser.add_argument('--tr', type=float, default=0.4,
+                        help='iou thresh')
+    parser.add_argument('--tp', type=float, default=0.4,
+                        help='iou thresh')
+    parser.add_argument('--tc', type=float, default=0.8,
+                        help='iou thresh')
+    parser.add_argument('--wr', type=float, default=1.0,
+                        help='iou thresh')
+    parser.add_argument('--wp', type=float, default=1.0,
+                        help='iou thresh')
     args = parser.parse_args()
     args.vals = args.vals.split(';') if args.vals else []
     print('vals:', args.vals)
