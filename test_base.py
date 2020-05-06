@@ -103,7 +103,167 @@ def polygon_union(pD, pG):
     return areaA + areaB - polygon_intersection(pD, pG);
 
 
-def eval_score(pred_list, gt_list, gt_tag_list, th=0.5):
+def score_by_IoU(gts, tags, preds, th=0.5):
+    npos = 0
+    tp, fp, nign = 0, 0, 0
+    # npos += len(gts)
+    gt_polys = []
+    for gt_id, gt in enumerate(gts):
+        gt = np.array(gt).reshape(-1)
+        gt = gt.reshape(int(gt.shape[0] / 2), 2)
+        gt_p = plg.Polygon(gt)
+        gt_polys.append(gt_p)
+        if tags[gt_id]:
+            npos += 1
+    # match predictions for the image
+    # print(preds)
+    cover = set()
+    for pred_id, pred in enumerate(preds):
+        pred = np.array(pred).reshape(-1)
+        pred = pred.reshape(int(pred.shape[0] / 2), 2)
+        # if pred.shape[0] <= 2:
+        #     continue
+        pred_p = plg.Polygon(pred)
+
+        flag = False
+        matched_to_ignore = False
+        for gt_id, gt_p in enumerate(gt_polys):
+            union = polygon_union(pred_p, gt_p)
+            inter = polygon_intersection(pred_p, gt_p)
+            #  IoU(pred, gt) > th => accept
+            if inter * 1.0 / union >= th:
+                if gt_id not in cover:
+                    flag = True
+                    cover.add(gt_id)
+                    if not tags[gt_id]:
+                        matched_to_ignore = True
+                    break
+        if matched_to_ignore:
+            nign += 1.0
+            # print('matched to ignore gt')
+            continue
+        if flag:
+            tp += 1.0
+        else:
+            fp += 1.0
+    return tp, fp, npos, nign
+
+
+def match_OM(gt_list, pred_list, tr, tc, weight):
+    precision = 0.0
+    recall = 0.0
+    for gt_id, gt_item in enumerate(gt_list):
+        if not gt_item['valid'] or gt_item['matches']:
+            continue
+        pred_p = pred_item['poly']
+        matches = []
+        union = None
+        for pred_id, pred_item in enumerate(pred_list):
+            if not pred_item['valid'] or pred_item['matches']:
+                continue
+            gt_p = gt_item['poly']
+            inter = polygon_intersection(pred_p, gt_p)
+            pred_area = pred_p.area()
+            if inter * 1.0 / pred_area >= tr:
+                matches.append(pred_id)
+                if union is None:
+                    union = pred_p
+                else:
+                    union = union | pred_p
+        if len(matches) < 2:
+            continue
+        # check coverage
+        inter = polygon_intersection(union, gt_p)
+        gt_area = gt_p.area()
+        if inter*1.0 < gt_area * tc:
+            continue
+        # apply
+        gt_item['matches'] = matches
+        for pred_id in matches:
+            pred_list[pred_id]['matches'].append(gt_id)
+        precision += len(matches) * weight
+        recall += weight
+    return precision, recall
+
+
+def get_hmean(precision, recall):
+    hmean = 0 if (precision + recall) == 0 else 2.0 * precision * recall / (precision + recall)
+    return hmean
+
+
+def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8):
+    num_gts = 0
+    num_preds = 0
+    # GTs
+    gt_list = []
+    for gt_id, gt in enumerate(gts):
+        gt = np.array(gt).reshape(-1)
+        gt = gt.reshape(int(gt.shape[0] / 2), 2)
+        gt_p = plg.Polygon(gt)
+        item = {'poly': gt_p, 'valid': tags[gt_id], 'matches':[]}
+        gt_list.append(item)
+        if tags[gt_id]:
+            num_gts += 1
+    # match predictions
+    pred_list = []
+    for pred_id, pred in enumerate(preds):
+        pred = np.array(pred).reshape(-1)
+        pred = pred.reshape(int(pred.shape[0] / 2), 2)
+        item = {'poly': gt_p, 'valid': True, 'matches':[]}
+        pred_list.append(item)
+    # match with ignored GTs
+    num_preds = len(pred_list)
+    num_igns = 0
+    for pred_id, pred_item in enumerate(pred_list):
+        pred_p = pred_item['poly']
+        for gt_id, gt_item in enumerate(gt_list):
+            gt_p = gt_item['poly']
+            inter = polygon_intersection(pred_p, gt_p)
+            if not gt_item['valid']:
+                pred_area = pred_p.area()
+                if inter * 1.0 / pred_area >= th:
+                    pred_item['valid'] = False
+                    num_igns += 1
+                    num_preds -= 1
+                    break
+    # match OO
+    precision = 0.0
+    recall = 0.0
+    cover = set()
+    for pred_id, pred_item in enumerate(pred_list):
+        if not pred_item['valid']:
+            continue
+        # match with GTs
+        pred_p = pred_item['poly']
+        for gt_id, gt_item in enumerate(gt_list):
+            gt_p = gt_item['poly']
+            union = polygon_union(pred_p, gt_p)
+            inter = polygon_intersection(pred_p, gt_p)
+            if inter * 1.0 / union >= th:
+                if gt_id not in cover:
+                    flag = True
+                    gt_item['matches'].append(pred_id)
+                    pred_item['matches'].append(gt_id)
+                    cover.add(gt_id)
+        if flag:
+            precision += 1.0
+            recall += 1.0
+    # match OM One GT to Many dets
+    p, r = match_OM(gt_list, pred_list, tr, tc, 1.0)
+    precision += p
+    recall += r
+    # match MO Many GTs to One det
+    r, p = match_OM(pred_list, gt_list, tp, tc, 1.0)
+    precision += p
+    recall += r
+
+    avg_precision = precision/num_preds
+    avg_recall = recall/num_gts
+    hmean = get_hmean(avg_precision, avg_recall)
+    return avg_precision, avg_recall, hmean, (recall, num_preds-precision, num_gts, num_igns)
+
+
+def eval_score_IoU(pred_list, gt_list, gt_tag_list, th=0.5):
     tp, fp, npos = 0, 0, 0
     nign = 0
     # loop all images
@@ -114,47 +274,37 @@ def eval_score(pred_list, gt_list, gt_tag_list, th=0.5):
         gts = gt_list[i]
         tags = gt_tag_list[i]
 
-        # npos += len(gts)
-        gt_polys = []
-        for gt_id, gt in enumerate(gts):
-            gt = np.array(gt).reshape(-1)
-            gt = gt.reshape(int(gt.shape[0] / 2), 2)
-            gt_p = plg.Polygon(gt)
-            gt_polys.append(gt_p)
-            if tags[gt_id]:
-                npos += 1
-        # match predictions for the image
-        # print(preds)
-        cover = set()
-        for pred_id, pred in enumerate(preds):
-            pred = np.array(pred).reshape(-1)
-            pred = pred.reshape(int(pred.shape[0] / 2), 2)
-            # if pred.shape[0] <= 2:
-            #     continue
-            pred_p = plg.Polygon(pred)
+        # IoU score
+        rets = score_by_IoU(gts, tags, preds, th=th)
+        tp += rets[0]
+        fp += rets[1]
+        npos += rets[2]
+        nign += rets[3]
+    # ok, finish the job
+    # print(tp, fp, npos, nign)
+    precision = tp / (tp + fp)
+    recall = tp / npos
+    hmean = 0 if (precision + recall) == 0 else 2.0 * precision * recall / (precision + recall)
+    return precision, recall, hmean, (tp, fp, npos, nign)
 
-            flag = False
-            matched_to_ignore = False
-            for gt_id, gt_p in enumerate(gt_polys):
-                union = polygon_union(pred_p, gt_p)
-                inter = polygon_intersection(pred_p, gt_p)
-                #  IoU(pred, gt) > th => accept
-                if inter * 1.0 / union >= th:
-                    if gt_id not in cover:
-                        flag = True
-                        cover.add(gt_id)
-                        if not tags[gt_id]:
-                            matched_to_ignore = True
-                        break
-            if matched_to_ignore:
-                nign += 1.0
-                # print('matched to ignore gt')
-                continue
-            if flag:
-                tp += 1.0
-            else:
-                fp += 1.0
 
+def eval_score_IC15(pred_list, gt_list, gt_tag_list, th=0.5):
+    tp, fp, npos = 0, 0, 0
+    nign = 0
+    # loop all images
+    num = len(pred_list)
+    for i in range(num):
+        # load prediction & gt
+        preds = pred_list[i]
+        gts = gt_list[i]
+        tags = gt_tag_list[i]
+
+        # IoU score
+        rets = score_by_IoU(gts, tags, preds, th=th)
+        tp += rets[0]
+        fp += rets[1]
+        npos += rets[2]
+        nign += rets[3]
     # ok, finish the job
     # print(tp, fp, npos, nign)
     precision = tp / (tp + fp)
