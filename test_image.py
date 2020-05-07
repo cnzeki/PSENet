@@ -6,10 +6,12 @@ from __future__ import print_function
 import time
 
 from deeploader.util.fileutil import read_lines, makedirs
+from deeploader.util.opencv import *
 from torch.utils import data
 from tqdm import tqdm
 
 from dataset import CTW1500TestLoader
+from dataset.data_util import img_scale_max
 from test_base import *
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
@@ -122,7 +124,7 @@ def test(args):
         debug(idx, image_name, [[text_box]], 'outputs/vis_%s/'% args.title)
 
 
-def test_model_debug(args, model, data_loader):
+def visualize_outputs(args, model, data_loader):
     title = data_loader.name
     # collect labels
     gt_bbox_list = []
@@ -137,37 +139,91 @@ def test_model_debug(args, model, data_loader):
         img_path = item['path']
         gt_bbox_list.append(gt_bboxes)
         gt_tag_list.append(gt_tags)
-
-        img = img_preprocess(org_img, args.long_size)
-
-        torch.cuda.synchronize()
-        pred_rets = run_PSENet(args, model, img, org_img.shape, out_type=args.out_type)
-        torch.cuda.synchronize()
-        pred_bboxes = []
-        for item in pred_rets:
-            pred_bboxes.append(item['bbox'])
-        pred_list.append(pred_bboxes)
-
-        # back to BGR
-        org_img = org_img[:, :, [2, 1, 0]]
-        # draw pred
-        pred_color = (0, 0, 255)
-        gt_color = (0, 255, 0)
-        ignore_color = (0, 255, 255)
-        # gt
-        for gt_id, bbox in enumerate(gt_bboxes):
-            color = gt_color if gt_tags[gt_id] else ignore_color
-            # print(bbox)
-            bbox = np.array(bbox).reshape(-1).astype('int32')
-            org_img=cv2.drawContours(org_img, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, color, 1)
-        # pred
-        for bbox in pred_bboxes:
-            bbox = np.array(bbox).reshape(-1)
-            org_img=cv2.drawContours(org_img, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, pred_color, 1)
-        # save image
+        # output dir
         img_name = os.path.basename(img_path)
         dst_path = 'outputs/pred_%s/%s' % (title, img_name)
         makedirs(dst_path)
+
+        # get predictions
+        if model:
+            img = img_preprocess(org_img, args.long_size)
+            torch.cuda.synchronize()
+            pred_rets, score = run_PSENet(args, model, img, org_img.shape, out_type=args.out_type, return_score=True)
+            torch.cuda.synchronize()
+            pred_bboxes = []
+            for item in pred_rets:
+                pred_bboxes.append(item['bbox'])
+            pred_list.append(pred_bboxes)
+            # save pred bboxes
+            save_ret_json(dst_path+'.json', pred_rets)
+        else:
+            # load prediction
+            img_name = os.path.basename(img_path)
+            dst_path = 'outputs/pred_%s/%s' % (title, img_name)
+            pred_rets = load_ret_json(dst_path+'.json')
+            pred_bboxes = []
+            for item in pred_rets:
+                pred_bboxes.append(item['bbox'])
+            pred_list.append(pred_bboxes)
+
+        # matching
+        rets = score_by_IC15(gt_bboxes, gt_tags, pred_bboxes, th=args.th,
+                             tr=args.tr, tp=args.tp, tc=args.tc, wr=args.wr, wp=args.wp)
+
+        gt_ret = rets[4]
+        pred_ret = rets[5]
+        # back to BGR
+        org_img = org_img[:, :, [2, 1, 0]]
+        # scale to 1280
+        org_img, scale = img_scale_max(org_img, args.long_size)
+        if model:
+            # alpha blend
+            score = score.reshape(score.shape[0], score.shape[1], 1) * 0.6
+            blend = score * np.array([0, 165, 255]) + (1.0 - score) * org_img
+            np.clip(blend, 0, 255.0)
+            org_img = blend
+
+        for idx, item in enumerate(gt_ret):
+            dbox = item['bbox'].astype('float32') * scale
+            item['bbox'] = dbox.astype('int32')
+        for idx, item in enumerate(pred_ret):
+            dbox = item['bbox'].astype('float32') * scale
+            item['bbox'] = dbox.astype('int32')
+        # OO: iou
+        # OM: cover
+        # gt: recall, fn, ignore
+        # pd: tp, fp, ignore
+        # gt
+        gt_colors = [COLOR_BLUE, COLOR_GREEN, COLOR_RED]
+        pred_colors = [COLOR_YELLOW, COLOR_CYAN, COLOR_PINK]
+
+        def _draw_match_ret(org_img, gt_ret, colors):
+            for gt_id, bbox in enumerate(gt_ret):
+                if not bbox['valid']:
+                    color = colors[0]
+                elif len(bbox['matches']) >= 1:
+                    color = colors[1]
+                else:
+                    color = colors[2]
+
+                text = ''
+                if 'iou' in bbox:
+                    text = 'IoU:%.2f' % bbox['iou']
+                if 'cover' in bbox:
+                    text = 'Cover:%.2f' % bbox['cover']
+                # draw contour
+                org_img = draw_contour(org_img, bbox['bbox'], color, 1)
+                # draw text, if any
+                if text:
+                    bound = get_contour_rect(bbox['bbox'])
+                    text_pos = (bound[0], bound[1])
+                    if text_pos[1] < 20:
+                        text_pos = (bound[0], bound[1]+bound[3])
+                    cv2.putText(org_img, text, text_pos, 1, 1, color)
+            return org_img
+        org_img = _draw_match_ret(org_img, gt_ret, gt_colors)
+        org_img = _draw_match_ret(org_img, pred_ret, pred_colors)
+        # save image
         cv2.imwrite(dst_path, org_img)
         bar.update(1)
     bar.close()
@@ -226,8 +282,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.vals = args.vals.split(';') if args.vals else []
     print('vals:', args.vals)
-    if args.vals:
-        model, epoch = load_model(args)
-        run_tests(args, model, epoch, test_model_debug)
+    if args.resume:
+        if args.vals:
+            model, epoch = load_model(args)
+            run_tests(args, model, epoch, visualize_outputs)
+        else:
+            test(args)
     else:
-        test(args)
+        run_tests(args, None, 0, visualize_outputs)

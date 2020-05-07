@@ -39,7 +39,7 @@ def img_scale_max(img, long_size=2240):
     h, w = img.shape[0:2]
     scale = long_size * 1.0 / max(h, w)
     img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
-    return img
+    return img, scale
 
 
 def random_scale(img, min_size, random_scale=np.array([0.5, 1.0, 2.0, 3.0])):

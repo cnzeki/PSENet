@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import collections
+import json
 import os
 import sys
 
@@ -14,13 +15,15 @@ import numpy as np
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
+from deeploader.util.fileutil import makedirs
 from torch.autograd import Variable
 
 import models
 import util
+from dataset import get_dataset_by_name
 # c++ version pse based on opencv 3+
 from pse import pse
-from dataset import get_dataset_by_name
+
 
 # python pse
 # from pypse import pse as pypse
@@ -82,6 +85,42 @@ def load_pts_from_txt(path):
             vals = [int(seg.strip()) for seg in segs]
             bboxes.append(vals)
     return bboxes
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
+def save_ret_json(path, ret_list):
+    makedirs(path)
+    with open(path, 'w') as f:
+        json.dump(ret_list, f, cls=NumpyEncoder, indent=2)
+
+
+def load_ret_json(path):
+    with open(path, 'r') as f:
+        obj = json.load(f)
+        return obj
+
+
+def draw_contour(org_img, bbox, color, stroke=1):
+    bbox = np.array(bbox).reshape(-1).astype('int32')
+    org_img = cv2.drawContours(org_img, [bbox.reshape(int(bbox.shape[0] / 2), 2)], -1, color, stroke)
+    return org_img
+
+
+def fill_contour(org_img, bbox, color):
+    return draw_contour(org_img, bbox, color, -1)
+
+
+def get_contour_rect(pts):
+    bbox = np.array(pts).reshape(-1).astype('int32')
+    bbox = bbox.reshape(int(bbox.shape[0] / 2), 2)
+    # print(bbox)
+    return cv2.boundingRect(bbox)
 
 
 def polygon_from_points(points):
@@ -186,14 +225,41 @@ def match_OM(gt_list, pred_list, tr, tc, weight):
         # check coverage
         inter = polygon_intersection(union, gt_p)
         gt_area = gt_p.area()
-        if inter*1.0 < gt_area * tc:
+        if inter * 1.0 < gt_area * tc:
             continue
         # apply
         gt_item['matches'] = matches
+        gt_item['cover'] = inter * 1.0 / gt_area
         for pred_id in matches:
             pred_list[pred_id]['matches'].append(gt_id)
         precision += len(matches) * weight
         recall += weight
+    return precision, recall
+
+
+def match_OO(gt_list, pred_list, th):
+    precision, recall = 0, 0
+    cover = set()
+    for pred_id, pred_item in enumerate(pred_list):
+        if not pred_item['valid']:
+            continue
+        # match with GTs
+        flag = False
+        pred_p = pred_item['poly']
+        for gt_id, gt_item in enumerate(gt_list):
+            gt_p = gt_item['poly']
+            union = polygon_union(pred_p, gt_p)
+            inter = polygon_intersection(pred_p, gt_p)
+            if inter * 1.0 / union >= th:
+                if gt_id not in cover:
+                    flag = True
+                    gt_item['matches'].append(pred_id)
+                    pred_item['matches'].append(gt_id)
+                    pred_item['iou'] = inter * 1.0/union
+                    cover.add(gt_id)
+        if flag:
+            precision += 1.0
+            recall += 1.0
     return precision, recall
 
 
@@ -211,7 +277,7 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8, wr=1.0, wp=1
         gt = np.array(gt).reshape(-1)
         gt = gt.reshape(int(gt.shape[0] / 2), 2)
         gt_p = plg.Polygon(gt)
-        item = {'poly': gt_p, 'valid': tags[gt_id], 'matches':[]}
+        item = {'poly': gt_p, 'bbox': gt, 'valid': tags[gt_id], 'matches': []}
         gt_list.append(item)
         if tags[gt_id]:
             num_gts += 1
@@ -221,7 +287,7 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8, wr=1.0, wp=1
         pred = np.array(pred).reshape(-1)
         pred = pred.reshape(int(pred.shape[0] / 2), 2)
         pred_p = plg.Polygon(pred)
-        item = {'poly': pred_p, 'valid': True, 'matches':[]}
+        item = {'poly': pred_p,'bbox': pred, 'valid': True, 'matches': []}
         pred_list.append(item)
     # match with ignored GTs
     num_preds = len(pred_list)
@@ -230,37 +296,18 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8, wr=1.0, wp=1
         pred_p = pred_item['poly']
         for gt_id, gt_item in enumerate(gt_list):
             gt_p = gt_item['poly']
-            inter = polygon_intersection(pred_p, gt_p)
             if not gt_item['valid']:
+                inter = polygon_intersection(pred_p, gt_p)
                 pred_area = pred_p.area()
                 if inter * 1.0 / pred_area >= th:
                     pred_item['valid'] = False
                     num_igns += 1
-                    num_preds -= 1
                     break
+    num_preds -= num_igns
     # match OO
     precision = 0.0
     recall = 0.0
-    cover = set()
-    for pred_id, pred_item in enumerate(pred_list):
-        if not pred_item['valid']:
-            continue
-        # match with GTs
-        flag = False
-        pred_p = pred_item['poly']
-        for gt_id, gt_item in enumerate(gt_list):
-            gt_p = gt_item['poly']
-            union = polygon_union(pred_p, gt_p)
-            inter = polygon_intersection(pred_p, gt_p)
-            if inter * 1.0 / union >= th:
-                if gt_id not in cover:
-                    flag = True
-                    gt_item['matches'].append(pred_id)
-                    pred_item['matches'].append(gt_id)
-                    cover.add(gt_id)
-        if flag:
-            precision += 1.0
-            recall += 1.0
+
     # match OM One GT to Many dets
     p, r = match_OM(gt_list, pred_list, tr, tc, wr)
     precision += p
@@ -269,8 +316,11 @@ def score_by_IC15(gts, tags, preds, th=0.5, tr=0.4, tp=0.4, tc=0.8, wr=1.0, wp=1
     r, p = match_OM(pred_list, gt_list, tp, tc, wp)
     precision += p
     recall += r
-
-    return (precision, num_preds, recall, num_gts)
+    # match OO
+    r, p = match_OO(pred_list, gt_list, th)
+    precision += p
+    recall += r
+    return (precision, num_preds, recall, num_gts, gt_list, pred_list)
 
 
 def eval_score_IoU(pred_list, gt_list, gt_tag_list, th=0.5):
@@ -327,7 +377,7 @@ def eval_score(args, pred_list, gt_list, gt_tag_list):
     if args.method == 'iou':
         return eval_score_IoU(pred_list, gt_list, gt_tag_list, args.th)
     elif args.method == 'ic15':
-        return eval_score_IC15(pred_list, gt_list, gt_tag_list,th=args.th,
+        return eval_score_IC15(pred_list, gt_list, gt_tag_list, th=args.th,
                                tr=args.tr, tp=args.tp, tc=args.tc, wr=args.wr, wp=args.wp)
     else:
         raise Exception("Unknown eval method:%s" % args.method)
@@ -371,7 +421,7 @@ def load_model(args):
     return model, epoch
 
 
-def run_PSENet(args, model, img, org_shape, out_type='rect'):
+def run_PSENet(args, model, img, org_shape, out_type='rect', return_score=False):
     outputs = model(img)
 
     score = torch.sigmoid(outputs[:, 0, :, :])
@@ -433,6 +483,8 @@ def run_PSENet(args, model, img, org_shape, out_type='rect'):
             bbox = bbox.astype('int32')
 
         bboxes.append({'type': out_type, 'bbox': bbox.reshape(-1)})
+    if return_score:
+        return bboxes, score
     return bboxes
 
 
@@ -483,11 +535,12 @@ def test_model(args, model, data_loader):
 
 
 def run_tests(args, model, epoch, test_model_fn=test_model):
-    # model single gpu  eval mode
-    if hasattr(model, 'module'):
-        model = model.module
-    model.eval()
-    torch.cuda.empty_cache()
+    if model:
+        # model single gpu  eval mode
+        if hasattr(model, 'module'):
+            model = model.module
+        model.eval()
+        torch.cuda.empty_cache()
     hmean_dict = {}
     print('\nTest @ epoch: %d' % (epoch + 1))
     for dataset in args.vals:
@@ -509,8 +562,9 @@ def run_tests(args, model, epoch, test_model_fn=test_model):
         target = sum_hmean / num
     else:
         target = hmean_dict[target]
-    # back to training mode
-    model.train()
+    if model:
+        # back to training mode
+        model.train()
     return target
 
 
