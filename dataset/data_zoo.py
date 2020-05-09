@@ -8,48 +8,52 @@ import numpy as np
 from deeploader.dataset.dataset_base import ArrayDataset
 
 
+the_dir = os.path.dirname(os.path.abspath(__file__))
+
 datasets = edict()
 dataset = datasets
+
+data_root = os.path.dirname(the_dir)
 
 # ctw1500
 ctw1500 = edict()
 ctw1500.name = 'ctw1500'
-ctw1500.dataset_path = '.'
+ctw1500.dataset_path = data_root
 ctw1500.split = 'train'
 dataset.ctw1500 = ctw1500
 
 # icdar2015
 icdar2015 = edict()
 icdar2015.name = 'icdar2015'
-icdar2015.dataset_path = '.'
+icdar2015.dataset_path = data_root
 icdar2015.split = 'train'
 dataset.icdar2015 = icdar2015
 
 # icdar2019mlt
 icdar2019mlt = edict()
 icdar2019mlt.name = 'icdar2019mlt'
-icdar2019mlt.dataset_path = '.'
+icdar2019mlt.dataset_path = data_root
 icdar2019mlt.split = 'train'
 dataset.icdar2019mlt = icdar2019mlt
 
 # icdar2019Art
 icdar2019art = edict()
 icdar2019art.name = 'icdar2019art'
-icdar2019art.dataset_path = '.'
+icdar2019art.dataset_path = data_root
 icdar2019art.split = 'train'
 dataset.icdar2019art = icdar2019art
 
 # icdar2019ReCTS
 icdar2019rects = edict()
 icdar2019rects.name = 'icdar2019rects'
-icdar2019rects.dataset_path = '.'
+icdar2019rects.dataset_path = data_root
 icdar2019rects.split = 'train'
 dataset.icdar2019rects = icdar2019rects
 
 # icdar2019ReCTS
 msratd500 = edict()
 msratd500.name = 'msratd500'
-msratd500.dataset_path = '.'
+msratd500.dataset_path = data_root
 msratd500.split = 'train'
 dataset.msratd500 = msratd500
 
