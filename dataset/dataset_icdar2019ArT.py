@@ -83,6 +83,6 @@ class ICDAR2019ARTDataset(ArrayDataset):
         img_name = os.path.basename(img_path).split('.')[0]
         gt = self.gt[img_name]
         bboxes, tags, langs, trans = parse_gt(gt)
-        item = {'img': img, 'type': 'quad', 'bboxes': bboxes,
+        item = {'img': img, 'type': 'quad', 'bboxes': bboxes, 'lang': langs, 'trans': trans,
                 'tags': tags, 'path': img_path}
         return item

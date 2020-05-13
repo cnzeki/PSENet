@@ -18,9 +18,11 @@ def get_bboxes(img, gt_path):
     lines = util.io.read_lines(gt_path)
     bboxes = []
     tags = []
+    trans = []
     for line in lines:
         line = util.str.remove_all(line, '\xef\xbb\xbf')
         gt = util.str.split(line, ',')
+        text = gt[-1].strip()
         if gt[-1][0] == '#':
             tags.append(False)
         else:
@@ -28,7 +30,8 @@ def get_bboxes(img, gt_path):
         box = [int(gt[i]) for i in range(8)]
         box = np.asarray(box).reshape((4, 2)).tolist()
         bboxes.append(box)
-    return bboxes, tags
+        trans.append(text)
+    return bboxes, tags, trans
 
 
 class ICDAR2015Dataset(ArrayDataset):
@@ -82,8 +85,9 @@ class ICDAR2015Dataset(ArrayDataset):
         # RGB
         img = get_img(img_path)
         # bbox normed to 0~1
-        bboxes, tags = get_bboxes(img, gt_path)
+        bboxes, tags, trans = get_bboxes(img, gt_path)
         # scale it back to pixel coord
         item = {'img': img, 'type': 'quad', 'bboxes': bboxes, 'tags': tags,
+                'trans': trans,
                 'path': img_path}
         return item

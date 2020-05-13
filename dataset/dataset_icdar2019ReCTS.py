@@ -82,6 +82,6 @@ class ICDAR2019ReCTSDataset(ArrayDataset):
         # get gt
         gt_path = self.gt_paths[index]
         bboxes, tags, trans = parse_gt(gt_path)
-        item = {'img': img, 'type': 'quad', 'bboxes': bboxes,
+        item = {'img': img, 'type': 'quad', 'bboxes': bboxes, 'trans': trans,
                 'tags': tags, 'path': img_path}
         return item

@@ -13,7 +13,7 @@ import util
 from dataset.data_util import get_img
 
 
-def get_bboxes(img, gt_path):
+def get_bboxes_det(img, gt_path):
     h, w = img.shape[0:2]
     lines = util.io.read_lines(gt_path)
     bboxes = []
@@ -34,14 +34,36 @@ def get_bboxes(img, gt_path):
     return bboxes, tags
 
 
+def get_bboxes_rec(img, gt_path):
+    h, w = img.shape[0:2]
+    lines = util.io.read_lines(gt_path)
+    bboxes = []
+    tags = []
+    trans = []
+    for line in lines[1:]:
+        line = util.str.remove_all(line, '\xef\xbb\xbf')
+        gt = util.str.split(line, ',')
+
+        x1 = np.int(gt[0])
+        y1 = np.int(gt[1])
+        text = gt[-1].strip()
+        bbox = [np.int(gt[i]) for i in range(4, 32)]
+        bbox = np.asarray(bbox) + ([x1 * 1.0, y1 * 1.0] * 14)
+        bbox = np.asarray(bbox).reshape((14, 2)).tolist()
+
+        bboxes.append(bbox)
+        tags.append(True)
+    return bboxes, tags, trans
+
+
 class CTW1500Dataset(ArrayDataset):
     def __init__(self, ctw_root='.', split='train', **kargs):
         ArrayDataset.__init__(self, **kargs)
         ctw_root_dir = ctw_root + '/data/ctw1500/'
         ctw_train_data_dir = ctw_root_dir + 'train/text_image/'
-        ctw_train_gt_dir = ctw_root_dir + 'train/text_label_curve/'
+        ctw_train_gt_dir = ctw_root_dir + 'train/ctw1500_e2e_train/'
         ctw_test_data_dir = ctw_root_dir + 'test/text_image/'
-        ctw_test_gt_dir = ctw_root_dir + 'test/text_label_circum/'
+        ctw_test_gt_dir = ctw_root_dir + 'test/ctw1500_e2e_test/'
         if split == 'train':
             data_dirs = [ctw_train_data_dir]
             gt_dirs = [ctw_train_gt_dir]
@@ -88,8 +110,9 @@ class CTW1500Dataset(ArrayDataset):
         # RGB
         img = get_img(img_path)
         # bbox normed to 0~1
-        bboxes, tags = get_bboxes(img, gt_path)
+        bboxes, tags, trans = get_bboxes_rec(img, gt_path)
 
         item = {'img': img, 'type': 'contour', 'bboxes': bboxes, 'tags': tags,
+                'trans': trans,
                 'path': img_path}
         return item

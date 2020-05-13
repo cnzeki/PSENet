@@ -92,5 +92,6 @@ class ICDAR2019MLTDataset(ArrayDataset):
         bboxes, tags, langs, trans = get_bboxes(img, gt_path)
         # scale it back to pixel coord
         item = {'img': img, 'type': 'quad', 'bboxes': bboxes,
+                'lang': langs, 'trans': trans,
                 'tags': tags, 'path': img_path}
         return item
