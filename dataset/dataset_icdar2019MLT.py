@@ -30,8 +30,14 @@ def get_bboxes(img, gt_path):
         box = [int(gt[i]) for i in range(8)]
         box = np.asarray(box).reshape((4, 2)).tolist()
         bboxes.append(box)
-        langs.append(gt[-2])
-        trans.append(gt[-1])
+        lang = gt[-2]
+        text = gt[-1].strip()
+        langs.append(lang)
+        trans.append(text)
+        # print(lang, text)
+        # if text and lang == 'Arabic':
+        #     for ch in range(len(text)):
+        #         print(text[ch])
     return bboxes, tags, langs, trans
 
 

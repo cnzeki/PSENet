@@ -8,6 +8,7 @@ import random
 import cv2
 import numpy as np
 from deeploader.dataset.dataset_base import ArrayDataset
+from deeploader.util.fileutil import read_lines
 
 import util
 from dataset.data_util import get_img
@@ -36,23 +37,27 @@ def get_bboxes_det(img, gt_path):
 
 def get_bboxes_rec(img, gt_path):
     h, w = img.shape[0:2]
-    lines = util.io.read_lines(gt_path)
+    lines = read_lines(gt_path)
     bboxes = []
     tags = []
     trans = []
     for line in lines[1:]:
-        line = util.str.remove_all(line, '\xef\xbb\xbf')
+        #line = util.str.remove_all(line, '\xef\xbb\xbf')
         gt = util.str.split(line, ',')
 
-        x1 = np.int(gt[0])
-        y1 = np.int(gt[1])
-        text = gt[-1].strip()
-        bbox = [np.int(gt[i]) for i in range(4, 32)]
-        bbox = np.asarray(bbox) + ([x1 * 1.0, y1 * 1.0] * 14)
+        bbox = [np.int(gt[i]) for i in range(0, 28)]
+        # bbox = np.asarray(bbox)
         bbox = np.asarray(bbox).reshape((14, 2)).tolist()
-
+        tag = True
+        text = '###'
+        texts = line.split('\"')
+        if len(texts) > 2:
+            text = texts[1]
+        if not text or text[0] == '#':
+            tag = False
+        tags.append(tag)
+        trans.append(text)
         bboxes.append(bbox)
-        tags.append(True)
     return bboxes, tags, trans
 
 
